@@ -1,3 +1,6 @@
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 import redis.asyncio as aioredis
@@ -45,6 +48,13 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(analysis.router)
 
+    frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
+    if os.path.exists(frontend_path):
+        app.mount("/static", StaticFiles(directory=frontend_path), name="static")
+
+        @app.get("/", include_in_schema=False)
+        async def serve_frontend():
+            return FileResponse(os.path.join(frontend_path, "index.html"))
     return app
 
 
