@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Fintel — AI Financial Research</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
 /* ─── Reset ─── */
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
@@ -349,6 +350,12 @@ body{
 .send:active{transform:scale(.9)}
 .send:disabled{opacity:.35;cursor:default}
 
+.msg-a p{margin-bottom:8px}.msg-a p:last-child{margin-bottom:0}
+.msg-a strong{color:#fff;font-weight:600}
+.msg-a ul,.msg-a ol{padding-left:16px;margin:6px 0}
+.msg-a li{margin-bottom:4px}
+.msg-a h3,.msg-a h2{font-size:13px;font-weight:700;margin:10px 0 4px;color:#fff}
+
 .badge-cache{
   display:inline-flex;align-items:center;gap:4px;
   padding:2px 8px;border-radius:20px;
@@ -617,7 +624,11 @@ async function send(){
   document.getElementById('sendBtn').disabled=false;
 }
 
-function addMsg(c,cls,txt){const d=document.createElement('div');d.className=cls;d.textContent=txt;c.appendChild(d);return d}
+function addMsg(c,cls,txt){
+  const d=document.createElement('div');d.className=cls;
+  if(cls==='msg-a'){d.innerHTML=marked.parse(txt)}else{d.textContent=txt}
+  c.appendChild(d);return d
+}
 function show(id,d='block'){document.getElementById(id).style.display=d}
 function hide(id){document.getElementById(id).style.display='none'}
 
