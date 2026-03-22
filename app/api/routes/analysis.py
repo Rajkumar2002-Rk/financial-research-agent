@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException
 import uuid
+import re
 
-from app.models.requests import AnalysisRequest, ComparisonRequest, PortfolioRequest
+from app.models.requests import AnalysisRequest
 from app.models.responses import AnalysisResponse
 from app.utils.config import get_settings
 from app.utils.logger import get_logger
@@ -10,15 +11,51 @@ logger = get_logger(__name__)
 settings = get_settings()
 router = APIRouter(prefix="/api/v1", tags=["Analysis"])
 
+COMPANY_TO_TICKER = {
+    "apple": "AAPL", "tesla": "TSLA", "microsoft": "MSFT",
+    "google": "GOOGL", "alphabet": "GOOGL", "amazon": "AMZN",
+    "meta": "META", "facebook": "META", "nvidia": "NVDA",
+    "netflix": "NFLX", "spotify": "SPOT", "uber": "UBER",
+    "airbnb": "ABNB", "shopify": "SHOP", "palantir": "PLTR",
+    "amd": "AMD", "intel": "INTC", "qualcomm": "QCOM",
+    "disney": "DIS", "coca cola": "KO", "pepsi": "PEP",
+    "nike": "NKE", "walmart": "WMT", "jpmorgan": "JPM",
+    "goldman": "GS", "berkshire": "BRK-B", "salesforce": "CRM",
+    "oracle": "ORCL", "adobe": "ADBE", "paypal": "PYPL",
+    "snap": "SNAP", "twitter": "X", "lyft": "LYFT",
+}
+
+SKIP_WORDS = {
+    "I", "A", "AN", "THE", "IN", "AT", "IS", "IT", "OR", "AND",
+    "TO", "OF", "ON", "BY", "AS", "FOR", "NOT", "BUT", "RSI",
+    "MA", "BUY", "SELL", "HOLD", "USD", "ETF", "AI", "IF",
+    "MY", "ME", "DO", "SO", "US", "BE", "NO", "UP", "GO",
+}
+
 
 def new_session_id():
     return f"session-{uuid.uuid4().hex[:12]}"
 
 
+def extract_tickers(message: str) -> list:
+    msg_lower = message.lower()
+    tickers = set()
+
+    for name, ticker in COMPANY_TO_TICKER.items():
+        if name in msg_lower:
+            tickers.add(ticker)
+
+    found = re.findall(r'\b[A-Z]{2,5}\b', message)
+    for t in found:
+        if t not in SKIP_WORDS:
+            tickers.add(t)
+
+    return list(tickers)[:3]
+
+
 @router.post("/analyze", response_model=AnalysisResponse)
 async def analyze_company(request: AnalysisRequest):
     session_id = request.session_id or new_session_id()
-
     logger.info("analyze_request", ticker=request.ticker, session_id=session_id)
 
     try:
@@ -49,32 +86,58 @@ async def analyze_company(request: AnalysisRequest):
     except Exception as e:
         logger.error("analyze_failed", ticker=request.ticker, error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
-    
+
 
 @router.post("/chat")
 async def chat(request: dict):
     from openai import OpenAI
     from app.services.session_service import SessionService
+    from app.tools.yfinance_tool import fetch_stock_data
 
-    ticker = request.get("ticker", "")
     message = request.get("message", "")
     session_id = request.get("session_id") or new_session_id()
+    context_ticker = request.get("ticker", "")
+
+    tickers_to_fetch = extract_tickers(message)
+
+    live_data_lines = []
+    for ticker in tickers_to_fetch:
+        try:
+            data = fetch_stock_data(ticker)
+            live_data_lines.append(
+                f"  {ticker}: Price=${data['current_price']}, "
+                f"52W High=${data['52_week_high']}, 52W Low=${data['52_week_low']}"
+            )
+        except Exception:
+            pass
 
     session = SessionService(settings)
     history = await session.get_history(session_id)
-
     await session.add_to_history(session_id, "user", message)
 
-    messages = [
-        {
-            "role": "system",
-            "content": f"You are a financial analyst assistant. The user just analyzed {ticker}. You already have this data: current price=${request.get('current_price', 'unknown')}, recommendation={request.get('recommendation', 'unknown')}, confidence={request.get('confidence_score', 'unknown')}, RSI={request.get('rsi', 'unknown')}, MA50={request.get('ma_50', 'unknown')}, MA200={request.get('ma_200', 'unknown')}, 1Y change={request.get('price_change_pct', 'unknown')}%. Answer questions using this data. Be concise."
-        }
+    system_parts = [
+        "You are a professional financial analyst AI. You provide expert, concise investment insights.",
+        "Always back your answers with data. For buy/sell/hold questions, give a clear recommendation with reasoning.",
     ]
 
+    if context_ticker:
+        ind = {}
+        system_parts.append(f"\nCURRENT SESSION — {context_ticker}:")
+        system_parts.append(f"  Price: ${request.get('current_price', 'N/A')}")
+        system_parts.append(f"  Recommendation: {request.get('recommendation', 'N/A')}")
+        system_parts.append(f"  Confidence: {request.get('confidence_score', 'N/A')}")
+        system_parts.append(f"  RSI: {request.get('rsi', 'N/A')}")
+        system_parts.append(f"  MA50: {request.get('ma_50', 'N/A')}")
+        system_parts.append(f"  MA200: {request.get('ma_200', 'N/A')}")
+        system_parts.append(f"  1Y Change: {request.get('price_change_pct', 'N/A')}%")
+
+    if live_data_lines:
+        system_parts.append("\nLIVE MARKET DATA (fetched now):")
+        system_parts.extend(live_data_lines)
+
+    messages = [{"role": "system", "content": "\n".join(system_parts)}]
     for msg in history[-10:]:
         messages.append({"role": msg["role"], "content": msg["content"]})
-
     messages.append({"role": "user", "content": message})
 
     client = OpenAI(api_key=settings.OPENAI_API_KEY)
@@ -86,5 +149,4 @@ async def chat(request: dict):
 
     reply = response.choices[0].message.content.strip()
     await session.add_to_history(session_id, "assistant", reply)
-
     return {"reply": reply, "session_id": session_id}

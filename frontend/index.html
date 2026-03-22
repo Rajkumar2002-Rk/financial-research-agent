@@ -1,398 +1,882 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Financial Research Agent</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Financial Research</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #0f1117;
-            color: #e0e0e0;
-            min-height: 100vh;
-        }
+:root {
+  --bg:            #000000;
+  --surface-1:     #1c1c1e;
+  --surface-2:     #2c2c2e;
+  --surface-3:     #3a3a3c;
+  --border:        rgba(255,255,255,0.08);
+  --border-focus:  rgba(10,132,255,0.6);
+  --text-1:        #ffffff;
+  --text-2:        rgba(235,235,245,0.6);
+  --text-3:        rgba(235,235,245,0.3);
+  --accent:        #0a84ff;
+  --accent-light:  rgba(10,132,255,0.15);
+  --green:         #30d158;
+  --green-light:   rgba(48,209,88,0.15);
+  --red:           #ff453a;
+  --red-light:     rgba(255,69,58,0.12);
+  --yellow:        #ffd60a;
+  --r-sm:  10px;
+  --r-md:  14px;
+  --r-lg:  18px;
+  --r-xl:  22px;
+}
 
-        .header {
-            background: #1a1d27;
-            padding: 20px 40px;
-            border-bottom: 1px solid #2a2d3a;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+html, body { height: 100%; }
 
-        .header h1 { font-size: 20px; font-weight: 600; color: #ffffff; }
-        .header span { font-size: 13px; color: #6b7280; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text-1);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
 
-        .container { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+/* ── Header ── */
+.header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  height: 52px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--border);
+}
 
-        .search-bar {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 32px;
-        }
+.header-brand { display: flex; align-items: center; gap: 10px; }
 
-        .search-bar input {
-            flex: 1;
-            padding: 12px 16px;
-            background: #1a1d27;
-            border: 1px solid #2a2d3a;
-            border-radius: 8px;
-            color: #ffffff;
-            font-size: 15px;
-            outline: none;
-        }
+.brand-mark {
+  width: 26px; height: 26px;
+  background: linear-gradient(135deg, #0a84ff 0%, #5e5ce6 100%);
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; color: #fff;
+  flex-shrink: 0;
+}
 
-        .search-bar input:focus { border-color: #3b82f6; }
+.brand-name {
+  font-size: 14px; font-weight: 600;
+  letter-spacing: -0.01em;
+}
 
-        .search-bar input::placeholder { color: #4b5563; }
+.header-meta {
+  display: flex; align-items: center; gap: 14px;
+}
 
-        .btn {
-            padding: 12px 24px;
-            background: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: 500;
-            cursor: pointer;
-        }
+.header-powered {
+  font-size: 11px; color: var(--text-3);
+}
 
-        .btn:hover { background: #2563eb; }
-        .btn:disabled { background: #374151; cursor: not-allowed; }
+.live-pill {
+  display: flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  background: var(--green-light);
+  border: 1px solid rgba(48,209,88,0.25);
+  border-radius: 20px;
+  font-size: 11px; font-weight: 500; color: var(--green);
+}
 
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+.live-dot {
+  width: 5px; height: 5px;
+  background: var(--green); border-radius: 50%;
+  animation: blink-dot 2s ease-in-out infinite;
+}
 
-        .card {
-            background: #1a1d27;
-            border: 1px solid #2a2d3a;
-            border-radius: 12px;
-            padding: 20px;
-        }
+@keyframes blink-dot {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.3; }
+}
 
-        .card-label { font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
-        .card-value { font-size: 24px; font-weight: 700; color: #ffffff; }
-        .card-sub { font-size: 13px; color: #6b7280; margin-top: 4px; }
+/* ── Layout ── */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  height: 100vh;
+  padding-top: 52px;
+}
 
-        .recommendation-BUY { color: #10b981; }
-        .recommendation-SELL { color: #ef4444; }
-        .recommendation-HOLD { color: #f59e0b; }
-        .recommendation-INSUFFICIENT_DATA { color: #6b7280; }
+/* ── Left Panel ── */
+.panel-left {
+  overflow-y: auto;
+  padding: 24px 20px 24px 28px;
+}
 
-        .chart-card {
-            background: #1a1d27;
-            border: 1px solid #2a2d3a;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 24px;
-        }
+.panel-left::-webkit-scrollbar { width: 5px; }
+.panel-left::-webkit-scrollbar-track { background: transparent; }
+.panel-left::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 3px; }
 
-        .chart-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; color: #ffffff; }
+/* ── Search ── */
+.search-row {
+  display: flex; gap: 10px;
+  margin-bottom: 22px;
+}
 
-        .indicators-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+.ticker-input {
+  flex: 1;
+  height: 46px; padding: 0 18px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  color: var(--text-1);
+  font-size: 15px; font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+  letter-spacing: 0.05em;
+}
+.ticker-input::placeholder { color: var(--text-3); letter-spacing: 0; }
+.ticker-input:focus { border-color: var(--border-focus); }
 
-        .indicator-item {
-            background: #1a1d27;
-            border: 1px solid #2a2d3a;
-            border-radius: 8px;
-            padding: 14px;
-        }
+.btn-analyze {
+  height: 46px; padding: 0 22px;
+  background: var(--accent);
+  color: #fff; border: none;
+  border-radius: var(--r-lg);
+  font-size: 14px; font-weight: 600; font-family: inherit;
+  cursor: pointer;
+  transition: background 0.18s, transform 0.1s;
+  white-space: nowrap;
+}
+.btn-analyze:hover  { background: #409cff; }
+.btn-analyze:active { transform: scale(0.97); }
+.btn-analyze:disabled { opacity: 0.38; cursor: not-allowed; transform: none; }
 
-        .indicator-label { font-size: 11px; color: #6b7280; text-transform: uppercase; margin-bottom: 4px; }
-        .indicator-value { font-size: 18px; font-weight: 600; color: #ffffff; }
+/* ── Error ── */
+.error-bar {
+  display: none; align-items: center; gap: 9px;
+  padding: 11px 15px;
+  background: var(--red-light);
+  border: 1px solid rgba(255,69,58,0.25);
+  border-radius: var(--r-sm);
+  color: #ff6868;
+  font-size: 13px;
+  margin-bottom: 18px;
+}
 
-        .text-card {
-            background: #1a1d27;
-            border: 1px solid #2a2d3a;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 16px;
-        }
+/* ── Loading ── */
+.loading-box {
+  display: none;
+  flex-direction: column; align-items: center; justify-content: center;
+  padding: 70px 20px; gap: 14px;
+}
 
-        .text-card h3 { font-size: 14px; font-weight: 600; color: #6b7280; text-transform: uppercase; margin-bottom: 10px; }
-        .text-card p { font-size: 14px; line-height: 1.7; color: #d1d5db; }
+.spinner {
+  width: 34px; height: 34px;
+  border: 2px solid var(--surface-3);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-        .loading {
-            text-align: center;
-            padding: 60px;
-            color: #6b7280;
-            display: none;
-        }
+.loading-title { font-size: 15px; font-weight: 500; }
+.loading-sub   { font-size: 12px; color: var(--text-3); text-align: center; line-height: 1.7; }
 
-        .error-msg {
-            background: #1f1315;
-            border: 1px solid #7f1d1d;
-            border-radius: 8px;
-            padding: 16px;
-            color: #fca5a5;
-            margin-bottom: 24px;
-            display: none;
-        }
+/* ── Placeholder ── */
+.placeholder-box {
+  display: flex;
+  flex-direction: column; align-items: center;
+  padding: 64px 20px; gap: 14px; text-align: center;
+}
 
-        .cached-badge {
-            display: inline-block;
-            background: #1e3a5f;
-            color: #60a5fa;
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 4px;
-            margin-left: 8px;
-        }
+.placeholder-icon {
+  width: 60px; height: 60px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  margin-bottom: 4px;
+}
+.placeholder-title { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+.placeholder-body  { font-size: 13px; color: var(--text-2); line-height: 1.65; max-width: 320px; }
 
-        #results { display: none; }
-    </style>
+.quick-picks {
+  display: flex; flex-wrap: wrap; gap: 7px; justify-content: center;
+  margin-top: 4px;
+}
+.quick-chip {
+  padding: 6px 14px;
+  background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 12px; font-weight: 500; color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.quick-chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+
+/* ── Results ── */
+#results { display: none; animation: fade-up 0.35s ease; }
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Metric Cards ── */
+.metric-row {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 10px; margin-bottom: 12px;
+}
+
+.metric-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px 18px;
+  position: relative; overflow: hidden;
+}
+
+.metric-card::after {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
+}
+
+.metric-label {
+  font-size: 10px; font-weight: 600;
+  color: var(--text-3); text-transform: uppercase; letter-spacing: 0.1em;
+  margin-bottom: 10px;
+}
+
+.metric-value {
+  font-size: 24px; font-weight: 700;
+  letter-spacing: -0.02em; line-height: 1;
+  margin-bottom: 6px;
+}
+
+.metric-sub { font-size: 11px; color: var(--text-3); }
+
+.col-buy  { color: var(--green); }
+.col-sell { color: var(--red); }
+.col-hold { color: var(--yellow); }
+.col-insufficient_data { color: var(--text-3); }
+
+/* ── Chart ── */
+.chart-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 18px 18px 14px;
+  margin-bottom: 12px;
+}
+
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.card-title {
+  font-size: 11px; font-weight: 600;
+  color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em;
+}
+
+.card-badge {
+  font-size: 10px; color: var(--text-3);
+}
+
+/* ── Indicators ── */
+.indicators-row {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 8px; margin-bottom: 12px;
+}
+
+.ind-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 13px 14px;
+}
+
+.ind-label {
+  font-size: 10px; font-weight: 600;
+  color: var(--text-3); text-transform: uppercase; letter-spacing: 0.1em;
+  margin-bottom: 7px;
+}
+
+.ind-value {
+  font-size: 16px; font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* ── Text Cards ── */
+.text-row {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; margin-bottom: 10px;
+}
+
+.text-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px 18px;
+}
+
+.text-card-full {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px 18px;
+  margin-bottom: 10px;
+}
+
+.text-label {
+  font-size: 10px; font-weight: 600;
+  color: var(--text-3); text-transform: uppercase; letter-spacing: 0.1em;
+  margin-bottom: 9px;
+}
+
+.text-body {
+  font-size: 13px; line-height: 1.65;
+  color: rgba(235,235,245,0.72);
+}
+
+/* ── Right Panel: Chat ── */
+.panel-right {
+  display: flex; flex-direction: column;
+  border-left: 1px solid var(--border);
+  background: var(--surface-1);
+  overflow: hidden;
+}
+
+.chat-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.chat-avatar {
+  width: 30px; height: 30px;
+  background: linear-gradient(135deg, #0a84ff 0%, #5e5ce6 100%);
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+
+.chat-head-title { font-size: 14px; font-weight: 600; }
+.chat-head-sub   { font-size: 11px; color: var(--text-3); margin-top: 1px; }
+
+.chat-body {
+  flex: 1; overflow-y: auto;
+  padding: 16px 14px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+
+.chat-body::-webkit-scrollbar { width: 4px; }
+.chat-body::-webkit-scrollbar-track { background: transparent; }
+.chat-body::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 2px; }
+
+.chat-empty-state {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 8px; text-align: center; padding: 30px 20px;
+  color: var(--text-3);
+}
+
+.chat-empty-icon  { font-size: 32px; margin-bottom: 6px; }
+.chat-empty-title { font-size: 13px; font-weight: 500; color: var(--text-2); }
+.chat-empty-body  { font-size: 12px; line-height: 1.6; }
+
+.msg-user {
+  align-self: flex-end;
+  background: var(--accent);
+  color: #fff;
+  padding: 9px 13px;
+  border-radius: 16px 16px 3px 16px;
+  font-size: 13px; line-height: 1.5;
+  max-width: 86%; word-wrap: break-word;
+}
+
+.msg-ai {
+  align-self: flex-start;
+  background: var(--surface-2);
+  color: rgba(235,235,245,0.88);
+  padding: 9px 13px;
+  border-radius: 16px 16px 16px 3px;
+  font-size: 13px; line-height: 1.6;
+  max-width: 92%; word-wrap: break-word;
+}
+
+.msg-typing {
+  align-self: flex-start;
+  background: var(--surface-2);
+  padding: 12px 14px;
+  border-radius: 16px 16px 16px 3px;
+}
+
+.dots { display: flex; gap: 4px; }
+.dots span {
+  width: 5px; height: 5px;
+  background: var(--text-3); border-radius: 50%;
+  animation: dot-pulse 1.2s ease-in-out infinite;
+}
+.dots span:nth-child(2) { animation-delay: 0.2s; }
+.dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dot-pulse {
+  0%,80%,100% { opacity: 0.3; transform: scale(1); }
+  40%          { opacity: 1;   transform: scale(1.1); }
+}
+
+/* Suggestion chips */
+.suggestions {
+  display: flex; flex-wrap: wrap; gap: 5px;
+  padding: 0 14px 10px;
+  flex-shrink: 0;
+}
+
+.sug-chip {
+  padding: 5px 11px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 11px; color: var(--text-2);
+  cursor: pointer; transition: all 0.15s;
+}
+.sug-chip:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Chat input */
+.chat-foot {
+  display: flex; align-items: center; gap: 9px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.chat-input {
+  flex: 1;
+  padding: 9px 14px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 22px;
+  color: var(--text-1);
+  font-size: 13px; font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.chat-input::placeholder { color: var(--text-3); }
+.chat-input:focus { border-color: var(--border-focus); }
+
+.btn-send {
+  width: 34px; height: 34px;
+  background: var(--accent); border: none; border-radius: 50%;
+  color: #fff; font-size: 16px; font-weight: 700;
+  cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.18s, transform 0.1s;
+}
+.btn-send:hover  { background: #409cff; }
+.btn-send:active { transform: scale(0.9); }
+.btn-send:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* Cached badge */
+.badge-cached {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px;
+  background: var(--accent-light);
+  border: 1px solid rgba(10,132,255,0.25);
+  border-radius: 20px;
+  font-size: 10px; font-weight: 500; color: var(--accent);
+}
+</style>
 </head>
 <body>
 
-<div class="header">
-    <h1>AI Financial Research Agent</h1>
-    <span>Powered by GPT-4o + YFinance + Tavily</span>
-</div>
+<!-- ── Header ── -->
+<header class="header">
+  <div class="header-brand">
+    <div class="brand-mark">✦</div>
+    <span class="brand-name">AI Financial Research</span>
+  </div>
+  <div class="header-meta">
+    <span class="header-powered">GPT-4o · Stooq · Tavily</span>
+    <div class="live-pill">
+      <div class="live-dot"></div>
+      Live
+    </div>
+  </div>
+</header>
 
-<div class="container">
+<!-- ── Layout ── -->
+<div class="layout">
 
-    <div class="search-bar">
-        <input type="text" id="tickerInput" placeholder="Enter ticker symbol (e.g. AAPL, NVDA, TSLA)" />
-        <button class="btn" onclick="analyze()" id="analyzeBtn">Analyze</button>
+  <!-- ── Left Panel ── -->
+  <div class="panel-left">
+
+    <div class="search-row">
+      <input class="ticker-input" id="tickerInput"
+             placeholder="Enter ticker — AAPL, TSLA, NVDA, MSFT…" />
+      <button class="btn-analyze" id="analyzeBtn" onclick="analyze()">Analyze</button>
     </div>
 
-    <div class="error-msg" id="errorMsg"></div>
-    <div class="loading" id="loading">Fetching data and running AI analysis...</div>
+    <div class="error-bar" id="errorBar">
+      <span>⚠</span><span id="errorText"></span>
+    </div>
 
+    <div class="loading-box" id="loadingBox">
+      <div class="spinner"></div>
+      <div class="loading-title">Running AI Analysis</div>
+      <div class="loading-sub">Fetching market data · Computing indicators<br>Generating insights</div>
+    </div>
+
+    <div class="placeholder-box" id="placeholder">
+      <div class="placeholder-icon">📈</div>
+      <div class="placeholder-title">Financial Intelligence</div>
+      <div class="placeholder-body">
+        Enter any stock ticker for AI-powered analysis — technical indicators,
+        news sentiment, and investment recommendations.
+      </div>
+      <div class="quick-picks">
+        <div class="quick-chip" onclick="quickAnalyze('AAPL')">AAPL</div>
+        <div class="quick-chip" onclick="quickAnalyze('TSLA')">TSLA</div>
+        <div class="quick-chip" onclick="quickAnalyze('NVDA')">NVDA</div>
+        <div class="quick-chip" onclick="quickAnalyze('MSFT')">MSFT</div>
+        <div class="quick-chip" onclick="quickAnalyze('GOOGL')">GOOGL</div>
+      </div>
+    </div>
+
+    <!-- Results -->
     <div id="results">
-        <div class="grid">
-            <div class="card">
-                <div class="card-label">Current Price</div>
-                <div class="card-value" id="price">—</div>
-                <div class="card-sub" id="company">—</div>
-            </div>
-            <div class="card">
-                <div class="card-label">Recommendation</div>
-                <div class="card-value" id="recommendation">—</div>
-                <div class="card-sub" id="trend">—</div>
-            </div>
-            <div class="card">
-                <div class="card-label">Confidence Score</div>
-                <div class="card-value" id="confidence">—</div>
-                <div class="card-sub" id="cachedBadge"></div>
-            </div>
+      <div class="metric-row">
+        <div class="metric-card">
+          <div class="metric-label">Current Price</div>
+          <div class="metric-value" id="price">—</div>
+          <div class="metric-sub" id="company">—</div>
         </div>
-
-        <div class="chart-card">
-            <h3 id="chartTitle">Price History</h3>
-            <canvas id="priceChart" height="80"></canvas>
+        <div class="metric-card">
+          <div class="metric-label">Recommendation</div>
+          <div class="metric-value" id="recommendation">—</div>
+          <div class="metric-sub" id="trend">—</div>
         </div>
-
-        <div class="indicators-grid">
-            <div class="indicator-item">
-                <div class="indicator-label">MA 50</div>
-                <div class="indicator-value" id="ma50">—</div>
-            </div>
-            <div class="indicator-item">
-                <div class="indicator-label">MA 200</div>
-                <div class="indicator-value" id="ma200">—</div>
-            </div>
-            <div class="indicator-item">
-                <div class="indicator-label">RSI</div>
-                <div class="indicator-value" id="rsi">—</div>
-            </div>
-            <div class="indicator-item">
-                <div class="indicator-label">1Y Change</div>
-                <div class="indicator-value" id="priceChange">—</div>
-            </div>
+        <div class="metric-card">
+          <div class="metric-label">Confidence</div>
+          <div class="metric-value" id="confidence">—</div>
+          <div class="metric-sub" id="cachedBadge"></div>
         </div>
+      </div>
 
+      <div class="chart-card">
+        <div class="card-header">
+          <span class="card-title" id="chartTitle">Price History</span>
+          <span class="card-badge">90 days</span>
+        </div>
+        <canvas id="priceChart" height="72"></canvas>
+      </div>
+
+      <div class="indicators-row">
+        <div class="ind-card">
+          <div class="ind-label">MA 50</div>
+          <div class="ind-value" id="ma50">—</div>
+        </div>
+        <div class="ind-card">
+          <div class="ind-label">MA 200</div>
+          <div class="ind-value" id="ma200">—</div>
+        </div>
+        <div class="ind-card">
+          <div class="ind-label">RSI (14)</div>
+          <div class="ind-value" id="rsi">—</div>
+        </div>
+        <div class="ind-card">
+          <div class="ind-label">1Y Change</div>
+          <div class="ind-value" id="priceChange">—</div>
+        </div>
+      </div>
+
+      <div class="text-card-full">
+        <div class="text-label">Reasoning</div>
+        <div class="text-body" id="reasoning">—</div>
+      </div>
+
+      <div class="text-row">
         <div class="text-card">
-            <h3>Reasoning</h3>
-            <p id="reasoning">—</p>
+          <div class="text-label">News Summary</div>
+          <div class="text-body" id="newsSummary">—</div>
         </div>
-
         <div class="text-card">
-            <h3>News Summary</h3>
-            <p id="newsSummary">—</p>
+          <div class="text-label">Risk Assessment</div>
+          <div class="text-body" id="riskAssessment">—</div>
         </div>
-
-        <div class="text-card">
-            <h3>Risk Assessment</h3>
-            <p id="riskAssessment">—</p>
-        </div>
+      </div>
     </div>
-    <div class="container" id="chatSection" style="display:none;">
-    <div class="card" style="padding: 0;">
-        <div style="padding: 16px 20px; border-bottom: 1px solid #2a2d3a;">
-            <span style="font-size: 14px; font-weight: 600; color: #ffffff;">Chat with the agent</span>
-            <span id="chatTicker" style="font-size: 13px; color: #6b7280; margin-left: 8px;"></span>
-        </div>
-        <div id="chatMessages" style="height: 280px; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px;"></div>
-        <div style="padding: 12px 16px; border-top: 1px solid #2a2d3a; display: flex; gap: 10px;">
-            <input type="text" id="chatInput" placeholder="Ask a follow-up question..." style="flex:1; padding: 10px 14px; background: #0f1117; border: 1px solid #2a2d3a; border-radius: 8px; color: #ffffff; font-size: 14px; outline: none;" />
-            <button class="btn" onclick="sendChat()" style="padding: 10px 18px;">Send</button>
-        </div>
-    </div>
-</div>
 
-</div>
+  </div><!-- /panel-left -->
+
+  <!-- ── Right Panel: Chat ── -->
+  <div class="panel-right">
+
+    <div class="chat-head">
+      <div class="chat-avatar">✦</div>
+      <div>
+        <div class="chat-head-title">AI Assistant</div>
+        <div class="chat-head-sub" id="chatSub">Ask about any stock</div>
+      </div>
+    </div>
+
+    <div class="chat-body" id="chatBody">
+      <div class="chat-empty-state" id="chatEmpty">
+        <div class="chat-empty-icon">✦</div>
+        <div class="chat-empty-title">Ask me anything</div>
+        <div class="chat-empty-body">
+          I can fetch live prices, compare multiple stocks,
+          and give buy / sell / hold recommendations.
+        </div>
+      </div>
+    </div>
+
+    <div class="suggestions">
+      <div class="sug-chip" onclick="suggest('Should I buy this stock?')">Should I buy?</div>
+      <div class="sug-chip" onclick="suggest('What is the price of TSLA?')">TSLA price</div>
+      <div class="sug-chip" onclick="suggest('Compare AAPL and MSFT')">Compare stocks</div>
+      <div class="sug-chip" onclick="suggest('What are the key risks?')">Key risks</div>
+    </div>
+
+    <div class="chat-foot">
+      <input class="chat-input" id="chatInput" placeholder="Ask about any stock…" />
+      <button class="btn-send" id="sendBtn" onclick="sendChat()">↑</button>
+    </div>
+
+  </div><!-- /panel-right -->
+
+</div><!-- /layout -->
 
 <script>
-    let priceChart = null;
-    let currentTicker = null;
-    let currentSessionId = null;
+let chart = null;
+let currentTicker     = null;
+let currentSessionId  = null;
+let currentData       = null;
 
-    async function analyze() {
-        const ticker = document.getElementById('tickerInput').value.trim().toUpperCase();
-        if (!ticker) return;
-
-        document.getElementById('errorMsg').style.display = 'none';
-        document.getElementById('results').style.display = 'none';
-        document.getElementById('loading').style.display = 'block';
-        document.getElementById('analyzeBtn').disabled = true;
-
-        try {
-            const response = await fetch('http://127.0.0.1:8000/api/v1/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ticker: ticker, include_news: true })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.detail || 'Analysis failed');
-            }
-
-            renderResults(data);
-
-        } catch (err) {
-            document.getElementById('errorMsg').textContent = err.message;
-            document.getElementById('errorMsg').style.display = 'block';
-        } finally {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('analyzeBtn').disabled = false;
-        }
-    }
-
-    function renderResults(data) {
-        const ind = data.technical_indicators || {};
-        currentTicker = data.ticker;
-        currentSessionId = data.session_id;
-        document.getElementById('chatSection').style.display = 'block';
-        document.getElementById('chatTicker', ).textContent = '— ' + data.ticker;
-        document.getElementById('chatMessages').innerHTML = '';
-
-        document.getElementById('price').textContent = '$' + (data.current_price || '—');
-        document.getElementById('company').textContent = data.company_name;
-        document.getElementById('trend').textContent = data.trend_analysis;
-
-        const rec = data.recommendation;
-        const recEl = document.getElementById('recommendation');
-        recEl.textContent = rec;
-        recEl.className = 'card-value recommendation-' + rec;
-
-        document.getElementById('confidence').textContent = ((data.confidence_score || 0) * 100).toFixed(0) + '%';
-        document.getElementById('cachedBadge').innerHTML = data.cached ? '<span class="cached-badge">cached</span>' : '';
-
-        document.getElementById('ma50').textContent = ind.ma_50 ? '$' + ind.ma_50 : '—';
-        document.getElementById('ma200').textContent = ind.ma_200 ? '$' + ind.ma_200 : '—';
-        document.getElementById('rsi').textContent = ind.rsi || '—';
-        document.getElementById('priceChange').textContent = ind.price_change_pct ? ind.price_change_pct + '%' : '—';
-
-        document.getElementById('reasoning').textContent = data.reasoning || '—';
-        document.getElementById('newsSummary').textContent = data.news_summary || '—';
-        document.getElementById('riskAssessment').textContent = data.risk_assessment || '—';
-
-        document.getElementById('chartTitle').textContent = data.ticker + ' — 1 Year Price History';
-        renderChart(data.price_history || []);
-
-        document.getElementById('results').style.display = 'block';
-    }
-
-    function renderChart(history) {
-        const labels = history.map(d => d.date);
-        const prices = history.map(d => d.close);
-
-        if (priceChart) priceChart.destroy();
-
-        const ctx = document.getElementById('priceChart').getContext('2d');
-        priceChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Close Price',
-                    data: prices,
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.05)',
-                    borderWidth: 2,
-                    pointRadius: 0,
-                    fill: true,
-                    tension: 0.1,
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: {
-                        ticks: { color: '#6b7280', maxTicksLimit: 8 },
-                        grid: { color: '#1f2937' }
-                    },
-                    y: {
-                        ticks: { color: '#6b7280', callback: v => '$' + v },
-                        grid: { color: '#1f2937' }
-                    }
-                }
-            }
-        });
-    }
-
-    document.getElementById('tickerInput').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') analyze();
-    });
-    async function sendChat() {
-    const input = document.getElementById('chatInput');
-    const message = input.value.trim();
-    if (!message || !currentTicker) return;
-
-    input.value = '';
-
-    const chatBox = document.getElementById('chatMessages');
-
-    chatBox.innerHTML += `<div style="align-self: flex-end; background: #1e3a5f; color: #e0e0e0; padding: 8px 14px; border-radius: 12px; font-size: 14px; max-width: 75%;">${message}</div>`;
-    chatBox.scrollTop = chatBox.scrollHeight;
-
-    const response = await fetch('http://127.0.0.1:8000/api/v1/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ticker: currentTicker,
-          message: message,
-          session_id: currentSessionId,
-          current_price: document.getElementById('price').textContent.replace('$',''),
-          recommendation: document.getElementById('recommendation').textContent,
-          rsi: document.getElementById('rsi').textContent,
-          ma_50: document.getElementById('ma50').textContent.replace('$',''),
-          ma_200: document.getElementById('ma200').textContent.replace('$',''),
-          price_change_pct: document.getElementById('priceChange').textContent.replace('%',''),
-        })
-
-    });
-
-    const data = await response.json();
-    currentSessionId = data.session_id;
-
-    chatBox.innerHTML += `<div style="align-self: flex-start; background: #1a1d27; border: 1px solid #2a2d3a; color: #d1d5db; padding: 8px 14px; border-radius: 12px; font-size: 14px; max-width: 75%;">${data.reply}</div>`;
-    chatBox.scrollTop = chatBox.scrollHeight;
+/* ── Quick Analyze ── */
+function quickAnalyze(t) {
+  document.getElementById('tickerInput').value = t;
+  analyze();
 }
 
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && document.activeElement === document.getElementById('chatInput')) {
-        sendChat();
-    }
+/* ── Analyze ── */
+async function analyze() {
+  const ticker = document.getElementById('tickerInput').value.trim().toUpperCase();
+  if (!ticker) return;
+
+  hide('errorBar');
+  hide('results');
+  hide('placeholder');
+  show('loadingBox', 'flex');
+  document.getElementById('analyzeBtn').disabled = true;
+
+  try {
+    const res  = await fetch('/api/v1/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ticker, include_news: true }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Analysis failed');
+
+    currentData = data;
+    renderResults(data);
+  } catch (err) {
+    document.getElementById('errorText').textContent = err.message;
+    show('errorBar', 'flex');
+    show('placeholder', 'flex');
+  } finally {
+    hide('loadingBox');
+    document.getElementById('analyzeBtn').disabled = false;
+  }
+}
+
+/* ── Render Results ── */
+function renderResults(d) {
+  const ind = d.technical_indicators || {};
+  currentTicker    = d.ticker;
+  currentSessionId = d.session_id;
+
+  document.getElementById('chatSub').textContent = `Analyzing ${d.ticker}`;
+  document.getElementById('chatEmpty').style.display = 'none';
+
+  /* price */
+  document.getElementById('price').textContent   = d.current_price ? '$' + d.current_price.toLocaleString() : '—';
+  document.getElementById('company').textContent = d.company_name || d.ticker;
+  document.getElementById('trend').textContent   = d.trend_analysis || '—';
+
+  /* recommendation */
+  const rec   = (d.recommendation || 'insufficient_data').toLowerCase();
+  const recEl = document.getElementById('recommendation');
+  recEl.textContent = d.recommendation || '—';
+  recEl.className   = 'metric-value col-' + rec;
+
+  /* confidence */
+  document.getElementById('confidence').textContent  = d.confidence_score ? Math.round(d.confidence_score * 100) + '%' : '—';
+  document.getElementById('cachedBadge').innerHTML   = d.cached ? '<span class="badge-cached">⚡ cached</span>' : '';
+
+  /* indicators */
+  document.getElementById('ma50').textContent  = ind.ma_50  ? '$' + ind.ma_50  : '—';
+  document.getElementById('ma200').textContent = ind.ma_200 ? '$' + ind.ma_200 : '—';
+
+  const rsiEl = document.getElementById('rsi');
+  rsiEl.textContent  = ind.rsi || '—';
+  rsiEl.style.color  = ind.rsi > 70 ? 'var(--red)' : ind.rsi < 30 ? 'var(--green)' : '';
+
+  const chgEl = document.getElementById('priceChange');
+  const chg   = ind.price_change_pct;
+  chgEl.textContent = chg !== undefined ? (chg > 0 ? '+' : '') + chg + '%' : '—';
+  chgEl.style.color = chg > 0 ? 'var(--green)' : chg < 0 ? 'var(--red)' : '';
+
+  /* text */
+  document.getElementById('reasoning').textContent     = d.reasoning      || '—';
+  document.getElementById('newsSummary').textContent   = d.news_summary   || '—';
+  document.getElementById('riskAssessment').textContent= d.risk_assessment|| '—';
+
+  document.getElementById('chartTitle').textContent = d.ticker + ' · Price History';
+  renderChart(d.price_history || []);
+
+  show('results', 'block');
+}
+
+/* ── Chart ── */
+function renderChart(history) {
+  if (chart) chart.destroy();
+  const labels = history.map(h => h.date);
+  const prices = history.map(h => h.close);
+
+  const ctx  = document.getElementById('priceChart').getContext('2d');
+  const grad = ctx.createLinearGradient(0, 0, 0, 220);
+  grad.addColorStop(0, 'rgba(10,132,255,0.22)');
+  grad.addColorStop(1, 'rgba(10,132,255,0)');
+
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: prices,
+        borderColor: '#0a84ff',
+        backgroundColor: grad,
+        borderWidth: 1.5,
+        pointRadius: 0,
+        fill: true,
+        tension: 0.3,
+      }],
+    },
+    options: {
+      responsive: true,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(28,28,30,0.95)',
+          titleColor: 'rgba(235,235,245,0.4)',
+          bodyColor: '#ffffff',
+          borderColor: 'rgba(255,255,255,0.1)',
+          borderWidth: 1, padding: 10,
+          titleFont: { size: 11 },
+          bodyFont:  { size: 13, weight: '600' },
+          callbacks: { label: c => '$' + c.parsed.y.toLocaleString() },
+        },
+      },
+      scales: {
+        x: {
+          ticks: { color: 'rgba(235,235,245,0.28)', maxTicksLimit: 6, font: { size: 11 } },
+          grid:  { color: 'rgba(255,255,255,0.04)' },
+          border:{ display: false },
+        },
+        y: {
+          ticks: { color: 'rgba(235,235,245,0.28)', font: { size: 11 }, callback: v => '$' + v.toLocaleString() },
+          grid:  { color: 'rgba(255,255,255,0.04)' },
+          border:{ display: false },
+        },
+      },
+    },
+  });
+}
+
+/* ── Chat ── */
+function suggest(text) {
+  document.getElementById('chatInput').value = text;
+  sendChat();
+}
+
+async function sendChat() {
+  const input   = document.getElementById('chatInput');
+  const message = input.value.trim();
+  if (!message) return;
+
+  input.value = '';
+  document.getElementById('sendBtn').disabled = true;
+  document.getElementById('chatEmpty').style.display = 'none';
+
+  const box = document.getElementById('chatBody');
+
+  appendMsg(box, 'msg-user', message);
+
+  const typing = document.createElement('div');
+  typing.className = 'msg-typing';
+  typing.innerHTML = '<div class="dots"><span></span><span></span><span></span></div>';
+  box.appendChild(typing);
+  box.scrollTop = box.scrollHeight;
+
+  try {
+    const ind = currentData?.technical_indicators || {};
+    const res = await fetch('/api/v1/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ticker:           currentTicker || '',
+        message,
+        session_id:       currentSessionId,
+        current_price:    currentData?.current_price,
+        recommendation:   currentData?.recommendation,
+        confidence_score: currentData?.confidence_score,
+        rsi:              ind.rsi,
+        ma_50:            ind.ma_50,
+        ma_200:           ind.ma_200,
+        price_change_pct: ind.price_change_pct,
+      }),
+    });
+    const data = await res.json();
+    currentSessionId = data.session_id;
+    typing.remove();
+    appendMsg(box, 'msg-ai', data.reply);
+  } catch {
+    typing.remove();
+    const e = appendMsg(box, 'msg-ai', 'Something went wrong. Please try again.');
+    e.style.color = 'var(--red)';
+  }
+
+  box.scrollTop = box.scrollHeight;
+  document.getElementById('sendBtn').disabled = false;
+}
+
+function appendMsg(container, cls, text) {
+  const d = document.createElement('div');
+  d.className   = cls;
+  d.textContent = text;
+  container.appendChild(d);
+  return d;
+}
+
+/* ── Helpers ── */
+function show(id, display = 'block') {
+  document.getElementById(id).style.display = display;
+}
+function hide(id) {
+  document.getElementById(id).style.display = 'none';
+}
+
+/* ── Keyboard ── */
+document.getElementById('tickerInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') analyze();
+});
+document.getElementById('chatInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
 });
 </script>
-
 </body>
 </html>

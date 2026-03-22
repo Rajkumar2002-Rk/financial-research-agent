@@ -1,4 +1,5 @@
-import yfinance as yf
+import pandas_datareader as pdr
+from datetime import datetime, timedelta
 from typing import Dict, Any
 from app.utils.logger import get_logger
 
@@ -7,21 +8,23 @@ logger = get_logger(__name__)
 
 def fetch_stock_data(ticker: str, period: str = "1y") -> Dict[str, Any]:
     try:
-        history = yf.download(
-            ticker,
-            period=period,
-            auto_adjust=True,
-            progress=False,
-        )
+        end = datetime.now()
+        start = end - timedelta(days=365)
 
-        if history.empty:
+        df = pdr.data.DataReader(ticker, "stooq", start, end)
+
+        if df.empty:
             raise ValueError(f"No price data found for ticker '{ticker}'")
 
-        history.columns = [col[0] if isinstance(col, tuple) else col for col in history.columns]
-        current_price = round(float(history["Close"].iloc[-1]), 2)
+        df = df.sort_index()
+        df = df.dropna()
+
+        current_price = round(float(df["Close"].iloc[-1]), 2)
+        week_52_high = round(float(df["High"].max()), 2)
+        week_52_low = round(float(df["Low"].min()), 2)
 
         history_records = []
-        for date, row in history.iterrows():
+        for date, row in df.iterrows():
             history_records.append({
                 "date": date.strftime("%Y-%m-%d"),
                 "open": round(float(row["Open"]), 2),
@@ -38,11 +41,11 @@ def fetch_stock_data(ticker: str, period: str = "1y") -> Dict[str, Any]:
             "currency": "USD",
             "sector": "N/A",
             "market_cap": None,
-            "52_week_high": round(float(history["High"].max()), 2),
-            "52_week_low": round(float(history["Low"].min()), 2),
+            "52_week_high": week_52_high,
+            "52_week_low": week_52_low,
             "price_history": history_records,
         }
 
     except Exception as e:
-        logger.error("yfinance_fetch_failed", ticker=ticker, error=str(e))
+        logger.error("stock_fetch_failed", ticker=ticker, error=str(e))
         raise
