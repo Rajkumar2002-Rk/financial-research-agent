@@ -1,882 +1,628 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>AI Financial Research</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Fintel — AI Financial Research</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+/* ─── Reset ─── */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 
-:root {
-  --bg:            #000000;
-  --surface-1:     #1c1c1e;
-  --surface-2:     #2c2c2e;
-  --surface-3:     #3a3a3c;
-  --border:        rgba(255,255,255,0.08);
-  --border-focus:  rgba(10,132,255,0.6);
-  --text-1:        #ffffff;
-  --text-2:        rgba(235,235,245,0.6);
-  --text-3:        rgba(235,235,245,0.3);
-  --accent:        #0a84ff;
-  --accent-light:  rgba(10,132,255,0.15);
-  --green:         #30d158;
-  --green-light:   rgba(48,209,88,0.15);
-  --red:           #ff453a;
-  --red-light:     rgba(255,69,58,0.12);
-  --yellow:        #ffd60a;
-  --r-sm:  10px;
-  --r-md:  14px;
-  --r-lg:  18px;
-  --r-xl:  22px;
+:root{
+  --black:   #000;
+  --c1:      #111113;
+  --c2:      #1c1c1f;
+  --c3:      #28282c;
+  --c4:      #3a3a3f;
+  --line:    rgba(255,255,255,0.07);
+  --w1:      #ffffff;
+  --w2:      rgba(255,255,255,0.55);
+  --w3:      rgba(255,255,255,0.28);
+  --w4:      rgba(255,255,255,0.12);
+  --blue:    #0a84ff;
+  --blue2:   #409cff;
+  --green:   #30d158;
+  --red:     #ff453a;
+  --amber:   #ffd60a;
+  --purple:  #bf5af2;
+  --r:       14px;
+  --r2:      20px;
 }
 
-html, body { height: 100%; }
+html,body{height:100%;overflow:hidden}
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
-  background: var(--bg);
-  color: var(--text-1);
-  -webkit-font-smoothing: antialiased;
-  overflow: hidden;
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",sans-serif;
+  background:var(--black);
+  color:var(--w1);
+  -webkit-font-smoothing:antialiased;
+  display:flex;
+  flex-direction:column;
 }
 
-/* ── Header ── */
-.header {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
-  height: 52px;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 28px;
-  background: rgba(0,0,0,0.75);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-bottom: 1px solid var(--border);
+/* ─── HEADER ─── */
+.hdr{
+  height:52px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 32px;
+  background:rgba(0,0,0,0.8);
+  backdrop-filter:blur(40px);
+  -webkit-backdrop-filter:blur(40px);
+  border-bottom:1px solid var(--line);
+  position:relative;z-index:100;
 }
 
-.header-brand { display: flex; align-items: center; gap: 10px; }
+.hdr-brand{display:flex;align-items:center;gap:11px}
 
-.brand-mark {
-  width: 26px; height: 26px;
-  background: linear-gradient(135deg, #0a84ff 0%, #5e5ce6 100%);
-  border-radius: 7px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 800; color: #fff;
-  flex-shrink: 0;
+.logo{
+  width:28px;height:28px;border-radius:8px;flex-shrink:0;
+  background:linear-gradient(135deg,#0a84ff 0%,#5e5ce6 100%);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:900;color:#fff;letter-spacing:-1px;
 }
 
-.brand-name {
-  font-size: 14px; font-weight: 600;
-  letter-spacing: -0.01em;
+.brand-text{font-size:15px;font-weight:700;letter-spacing:-0.03em}
+.brand-tag{font-size:11px;color:var(--w3);margin-left:2px;font-weight:400}
+
+.hdr-right{display:flex;align-items:center;gap:14px}
+.hdr-stack{font-size:11px;color:var(--w3)}
+
+.badge-live{
+  display:flex;align-items:center;gap:5px;
+  padding:3px 10px 3px 8px;
+  border-radius:20px;
+  border:1px solid rgba(48,209,88,0.2);
+  background:rgba(48,209,88,0.08);
+  font-size:11px;font-weight:600;color:var(--green);
+}
+.dot-live{
+  width:6px;height:6px;border-radius:50%;background:var(--green);
+  animation:blink 2s ease-in-out infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ─── MAIN ─── */
+.main{
+  flex:1;
+  display:flex;
+  overflow:hidden;
 }
 
-.header-meta {
-  display: flex; align-items: center; gap: 14px;
+/* ─── LEFT PANEL ─── */
+.left{
+  flex:1;
+  overflow-y:auto;
+  padding:28px 24px 40px 32px;
+}
+.left::-webkit-scrollbar{width:4px}
+.left::-webkit-scrollbar-track{background:transparent}
+.left::-webkit-scrollbar-thumb{background:var(--c4);border-radius:2px}
+
+/* ─── SEARCH ─── */
+.search-wrap{
+  display:flex;gap:10px;
+  margin-bottom:24px;
 }
 
-.header-powered {
-  font-size: 11px; color: var(--text-3);
+.ticker-field{
+  flex:1;height:50px;
+  padding:0 20px;
+  background:var(--c2);
+  border:1px solid var(--line);
+  border-radius:var(--r2);
+  color:var(--w1);
+  font-size:15px;font-family:inherit;
+  outline:none;
+  transition:border-color .2s,background .2s;
+  letter-spacing:.04em;
+}
+.ticker-field::placeholder{color:var(--w3);letter-spacing:0}
+.ticker-field:focus{border-color:rgba(10,132,255,.5);background:var(--c1)}
+
+.btn-go{
+  height:50px;padding:0 26px;
+  background:var(--blue);
+  border:none;border-radius:var(--r2);
+  color:#fff;font-size:14px;font-weight:600;font-family:inherit;
+  cursor:pointer;white-space:nowrap;
+  transition:background .18s,transform .1s;
+}
+.btn-go:hover{background:var(--blue2)}
+.btn-go:active{transform:scale(.97)}
+.btn-go:disabled{opacity:.35;cursor:default;transform:none}
+
+/* ─── ALERTS ─── */
+.err-bar{
+  display:none;align-items:center;gap:8px;
+  padding:11px 15px;margin-bottom:18px;
+  background:rgba(255,69,58,.1);
+  border:1px solid rgba(255,69,58,.22);
+  border-radius:var(--r);
+  color:#ff6b6b;font-size:13px;
 }
 
-.live-pill {
-  display: flex; align-items: center; gap: 5px;
-  padding: 3px 10px;
-  background: var(--green-light);
-  border: 1px solid rgba(48,209,88,0.25);
-  border-radius: 20px;
-  font-size: 11px; font-weight: 500; color: var(--green);
+/* ─── SPINNER ─── */
+.spin-wrap{
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  padding:80px 0;gap:16px;text-align:center;
+}
+.spinner{
+  width:36px;height:36px;
+  border:2px solid var(--c4);border-top-color:var(--blue);
+  border-radius:50%;animation:spin .75s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin-label{font-size:14px;font-weight:500}
+.spin-sub{font-size:12px;color:var(--w3);line-height:1.7}
+
+/* ─── PLACEHOLDER ─── */
+.home{
+  display:flex;flex-direction:column;align-items:center;
+  padding:72px 0 40px;gap:16px;text-align:center;
+}
+.home-icon{
+  width:64px;height:64px;border-radius:18px;
+  background:var(--c2);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;margin-bottom:4px;
+}
+.home-h{font-size:22px;font-weight:700;letter-spacing:-.03em}
+.home-p{font-size:14px;color:var(--w2);line-height:1.65;max-width:320px}
+.quick{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:4px}
+.qc{
+  padding:7px 16px;
+  background:var(--c2);border:1px solid var(--line);border-radius:20px;
+  font-size:12px;font-weight:600;color:var(--w2);
+  cursor:pointer;transition:all .15s;
+  letter-spacing:.03em;
+}
+.qc:hover{border-color:var(--blue);color:var(--blue);background:rgba(10,132,255,.08)}
+
+/* ─── RESULTS ─── */
+#results{display:none;animation:up .35s ease}
+@keyframes up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ─── METRIC CARDS ─── */
+.cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+
+.mcard{
+  background:var(--c2);border:1px solid var(--line);border-radius:var(--r2);
+  padding:18px 20px;position:relative;overflow:hidden;
+}
+.mcard::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent);
+}
+.mlabel{font-size:10px;font-weight:600;color:var(--w3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px}
+.mval{font-size:26px;font-weight:700;letter-spacing:-.03em;line-height:1;margin-bottom:6px}
+.msub{font-size:11px;color:var(--w3)}
+
+.green{color:var(--green)}
+.red{color:var(--red)}
+.amber{color:var(--amber)}
+.dim{color:var(--w3)}
+
+/* Glow on BUY card */
+.mcard.glow-green{border-color:rgba(48,209,88,.25);background:linear-gradient(135deg,rgba(48,209,88,.07) 0%,var(--c2) 60%)}
+.mcard.glow-red{border-color:rgba(255,69,58,.25);background:linear-gradient(135deg,rgba(255,69,58,.07) 0%,var(--c2) 60%)}
+.mcard.glow-amber{border-color:rgba(255,214,10,.2);background:linear-gradient(135deg,rgba(255,214,10,.05) 0%,var(--c2) 60%)}
+
+/* ─── CHART ─── */
+.chart-block{
+  background:var(--c2);border:1px solid var(--line);border-radius:var(--r2);
+  padding:18px 18px 14px;margin-bottom:12px;
+}
+.block-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.block-title{font-size:11px;font-weight:600;color:var(--w3);text-transform:uppercase;letter-spacing:.09em}
+.block-tag{font-size:10px;color:var(--w3)}
+
+/* ─── INDICATORS ─── */
+.ind4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.icard{
+  background:var(--c2);border:1px solid var(--line);border-radius:var(--r);
+  padding:13px 14px;
+}
+.ilabel{font-size:10px;font-weight:600;color:var(--w3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px}
+.ival{font-size:17px;font-weight:600;letter-spacing:-.01em}
+
+/* ─── TEXT CARDS ─── */
+.text-full{
+  background:var(--c2);border:1px solid var(--line);border-radius:var(--r2);
+  padding:18px 20px;margin-bottom:10px;
+}
+.text2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
+.tcard{
+  background:var(--c2);border:1px solid var(--line);border-radius:var(--r2);
+  padding:16px 18px;
+}
+.tl{font-size:10px;font-weight:600;color:var(--w3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:9px}
+.tb{font-size:13px;line-height:1.65;color:rgba(255,255,255,.68)}
+
+/* ─── RIGHT PANEL (CHAT) ─── */
+.right{
+  width:390px;flex-shrink:0;
+  display:flex;flex-direction:column;
+  border-left:1px solid var(--line);
+  background:var(--c1);
+  overflow:hidden;
 }
 
-.live-dot {
-  width: 5px; height: 5px;
-  background: var(--green); border-radius: 50%;
-  animation: blink-dot 2s ease-in-out infinite;
+/* Chat header */
+.chat-hdr{
+  display:flex;align-items:center;gap:11px;
+  padding:15px 18px;
+  border-bottom:1px solid var(--line);
+  flex-shrink:0;
+  background:rgba(0,0,0,.3);
 }
-
-@keyframes blink-dot {
-  0%,100% { opacity: 1; }
-  50%      { opacity: 0.3; }
+.chat-av{
+  width:32px;height:32px;border-radius:10px;flex-shrink:0;
+  background:linear-gradient(135deg,#0a84ff 0%,#5e5ce6 100%);
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;
 }
+.chat-hdr-name{font-size:14px;font-weight:600}
+.chat-hdr-sub{font-size:11px;color:var(--w3);margin-top:1px}
 
-/* ── Layout ── */
-.layout {
-  display: grid;
-  grid-template-columns: 1fr 360px;
-  height: 100vh;
-  padding-top: 52px;
+/* Messages */
+.msgs{
+  flex:1;overflow-y:auto;
+  padding:16px 14px;
+  display:flex;flex-direction:column;gap:10px;
 }
+.msgs::-webkit-scrollbar{width:3px}
+.msgs::-webkit-scrollbar-track{background:transparent}
+.msgs::-webkit-scrollbar-thumb{background:var(--c4);border-radius:2px}
 
-/* ── Left Panel ── */
-.panel-left {
-  overflow-y: auto;
-  padding: 24px 20px 24px 28px;
+.empty-chat{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;text-align:center;padding:30px 24px;
 }
+.empty-icon{font-size:36px;margin-bottom:8px}
+.empty-h{font-size:14px;font-weight:600;color:var(--w2)}
+.empty-p{font-size:12px;color:var(--w3);line-height:1.65}
 
-.panel-left::-webkit-scrollbar { width: 5px; }
-.panel-left::-webkit-scrollbar-track { background: transparent; }
-.panel-left::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 3px; }
-
-/* ── Search ── */
-.search-row {
-  display: flex; gap: 10px;
-  margin-bottom: 22px;
+.msg-u{
+  align-self:flex-end;
+  background:var(--blue);color:#fff;
+  padding:9px 14px;border-radius:16px 16px 4px 16px;
+  font-size:13px;line-height:1.5;max-width:86%;word-wrap:break-word;
 }
-
-.ticker-input {
-  flex: 1;
-  height: 46px; padding: 0 18px;
-  background: var(--surface-1);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  color: var(--text-1);
-  font-size: 15px; font-family: inherit;
-  outline: none;
-  transition: border-color 0.2s;
-  letter-spacing: 0.05em;
+.msg-a{
+  align-self:flex-start;
+  background:var(--c3);color:rgba(255,255,255,.88);
+  padding:9px 14px;border-radius:16px 16px 16px 4px;
+  font-size:13px;line-height:1.6;max-width:92%;word-wrap:break-word;
 }
-.ticker-input::placeholder { color: var(--text-3); letter-spacing: 0; }
-.ticker-input:focus { border-color: var(--border-focus); }
-
-.btn-analyze {
-  height: 46px; padding: 0 22px;
-  background: var(--accent);
-  color: #fff; border: none;
-  border-radius: var(--r-lg);
-  font-size: 14px; font-weight: 600; font-family: inherit;
-  cursor: pointer;
-  transition: background 0.18s, transform 0.1s;
-  white-space: nowrap;
+.msg-typing{
+  align-self:flex-start;
+  background:var(--c3);padding:13px 15px;
+  border-radius:16px 16px 16px 4px;
 }
-.btn-analyze:hover  { background: #409cff; }
-.btn-analyze:active { transform: scale(0.97); }
-.btn-analyze:disabled { opacity: 0.38; cursor: not-allowed; transform: none; }
-
-/* ── Error ── */
-.error-bar {
-  display: none; align-items: center; gap: 9px;
-  padding: 11px 15px;
-  background: var(--red-light);
-  border: 1px solid rgba(255,69,58,0.25);
-  border-radius: var(--r-sm);
-  color: #ff6868;
-  font-size: 13px;
-  margin-bottom: 18px;
+.dots{display:flex;gap:4px}
+.dots span{
+  width:5px;height:5px;background:var(--w3);border-radius:50%;
+  animation:dp 1.2s ease-in-out infinite;
 }
-
-/* ── Loading ── */
-.loading-box {
-  display: none;
-  flex-direction: column; align-items: center; justify-content: center;
-  padding: 70px 20px; gap: 14px;
-}
-
-.spinner {
-  width: 34px; height: 34px;
-  border: 2px solid var(--surface-3);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 0.75s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.loading-title { font-size: 15px; font-weight: 500; }
-.loading-sub   { font-size: 12px; color: var(--text-3); text-align: center; line-height: 1.7; }
-
-/* ── Placeholder ── */
-.placeholder-box {
-  display: flex;
-  flex-direction: column; align-items: center;
-  padding: 64px 20px; gap: 14px; text-align: center;
-}
-
-.placeholder-icon {
-  width: 60px; height: 60px;
-  background: var(--surface-1);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 26px;
-  margin-bottom: 4px;
-}
-.placeholder-title { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
-.placeholder-body  { font-size: 13px; color: var(--text-2); line-height: 1.65; max-width: 320px; }
-
-.quick-picks {
-  display: flex; flex-wrap: wrap; gap: 7px; justify-content: center;
-  margin-top: 4px;
-}
-.quick-chip {
-  padding: 6px 14px;
-  background: var(--surface-1); border: 1px solid var(--border);
-  border-radius: 20px;
-  font-size: 12px; font-weight: 500; color: var(--text-2);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.quick-chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
-
-/* ── Results ── */
-#results { display: none; animation: fade-up 0.35s ease; }
-
-@keyframes fade-up {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ── Metric Cards ── */
-.metric-row {
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 10px; margin-bottom: 12px;
-}
-
-.metric-card {
-  background: var(--surface-1);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: 16px 18px;
-  position: relative; overflow: hidden;
-}
-
-.metric-card::after {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
-}
-
-.metric-label {
-  font-size: 10px; font-weight: 600;
-  color: var(--text-3); text-transform: uppercase; letter-spacing: 0.1em;
-  margin-bottom: 10px;
-}
-
-.metric-value {
-  font-size: 24px; font-weight: 700;
-  letter-spacing: -0.02em; line-height: 1;
-  margin-bottom: 6px;
-}
-
-.metric-sub { font-size: 11px; color: var(--text-3); }
-
-.col-buy  { color: var(--green); }
-.col-sell { color: var(--red); }
-.col-hold { color: var(--yellow); }
-.col-insufficient_data { color: var(--text-3); }
-
-/* ── Chart ── */
-.chart-card {
-  background: var(--surface-1);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: 18px 18px 14px;
-  margin-bottom: 12px;
-}
-
-.card-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 14px;
-}
-
-.card-title {
-  font-size: 11px; font-weight: 600;
-  color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em;
-}
-
-.card-badge {
-  font-size: 10px; color: var(--text-3);
-}
-
-/* ── Indicators ── */
-.indicators-row {
-  display: grid; grid-template-columns: repeat(4, 1fr);
-  gap: 8px; margin-bottom: 12px;
-}
-
-.ind-card {
-  background: var(--surface-1);
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  padding: 13px 14px;
-}
-
-.ind-label {
-  font-size: 10px; font-weight: 600;
-  color: var(--text-3); text-transform: uppercase; letter-spacing: 0.1em;
-  margin-bottom: 7px;
-}
-
-.ind-value {
-  font-size: 16px; font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-/* ── Text Cards ── */
-.text-row {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 10px; margin-bottom: 10px;
-}
-
-.text-card {
-  background: var(--surface-1);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: 16px 18px;
-}
-
-.text-card-full {
-  background: var(--surface-1);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: 16px 18px;
-  margin-bottom: 10px;
-}
-
-.text-label {
-  font-size: 10px; font-weight: 600;
-  color: var(--text-3); text-transform: uppercase; letter-spacing: 0.1em;
-  margin-bottom: 9px;
-}
-
-.text-body {
-  font-size: 13px; line-height: 1.65;
-  color: rgba(235,235,245,0.72);
-}
-
-/* ── Right Panel: Chat ── */
-.panel-right {
-  display: flex; flex-direction: column;
-  border-left: 1px solid var(--border);
-  background: var(--surface-1);
-  overflow: hidden;
-}
-
-.chat-head {
-  display: flex; align-items: center; gap: 10px;
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-.chat-avatar {
-  width: 30px; height: 30px;
-  background: linear-gradient(135deg, #0a84ff 0%, #5e5ce6 100%);
-  border-radius: 9px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; flex-shrink: 0;
-}
-
-.chat-head-title { font-size: 14px; font-weight: 600; }
-.chat-head-sub   { font-size: 11px; color: var(--text-3); margin-top: 1px; }
-
-.chat-body {
-  flex: 1; overflow-y: auto;
-  padding: 16px 14px;
-  display: flex; flex-direction: column; gap: 12px;
-}
-
-.chat-body::-webkit-scrollbar { width: 4px; }
-.chat-body::-webkit-scrollbar-track { background: transparent; }
-.chat-body::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 2px; }
-
-.chat-empty-state {
-  flex: 1;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 8px; text-align: center; padding: 30px 20px;
-  color: var(--text-3);
-}
-
-.chat-empty-icon  { font-size: 32px; margin-bottom: 6px; }
-.chat-empty-title { font-size: 13px; font-weight: 500; color: var(--text-2); }
-.chat-empty-body  { font-size: 12px; line-height: 1.6; }
-
-.msg-user {
-  align-self: flex-end;
-  background: var(--accent);
-  color: #fff;
-  padding: 9px 13px;
-  border-radius: 16px 16px 3px 16px;
-  font-size: 13px; line-height: 1.5;
-  max-width: 86%; word-wrap: break-word;
-}
-
-.msg-ai {
-  align-self: flex-start;
-  background: var(--surface-2);
-  color: rgba(235,235,245,0.88);
-  padding: 9px 13px;
-  border-radius: 16px 16px 16px 3px;
-  font-size: 13px; line-height: 1.6;
-  max-width: 92%; word-wrap: break-word;
-}
-
-.msg-typing {
-  align-self: flex-start;
-  background: var(--surface-2);
-  padding: 12px 14px;
-  border-radius: 16px 16px 16px 3px;
-}
-
-.dots { display: flex; gap: 4px; }
-.dots span {
-  width: 5px; height: 5px;
-  background: var(--text-3); border-radius: 50%;
-  animation: dot-pulse 1.2s ease-in-out infinite;
-}
-.dots span:nth-child(2) { animation-delay: 0.2s; }
-.dots span:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes dot-pulse {
-  0%,80%,100% { opacity: 0.3; transform: scale(1); }
-  40%          { opacity: 1;   transform: scale(1.1); }
-}
+.dots span:nth-child(2){animation-delay:.2s}
+.dots span:nth-child(3){animation-delay:.4s}
+@keyframes dp{0%,80%,100%{opacity:.3;transform:scale(1)}40%{opacity:1;transform:scale(1.15)}}
 
 /* Suggestion chips */
-.suggestions {
-  display: flex; flex-wrap: wrap; gap: 5px;
-  padding: 0 14px 10px;
-  flex-shrink: 0;
+.chips{
+  display:flex;flex-wrap:wrap;gap:5px;
+  padding:0 14px 10px;flex-shrink:0;
 }
-
-.sug-chip {
-  padding: 5px 11px;
-  background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: 20px;
-  font-size: 11px; color: var(--text-2);
-  cursor: pointer; transition: all 0.15s;
+.chip{
+  padding:5px 12px;
+  background:var(--c3);border:1px solid var(--line);border-radius:20px;
+  font-size:11px;color:var(--w2);cursor:pointer;transition:all .15s;
 }
-.sug-chip:hover { border-color: var(--accent); color: var(--accent); }
+.chip:hover{border-color:var(--blue);color:var(--blue);background:rgba(10,132,255,.08)}
 
-/* Chat input */
-.chat-foot {
-  display: flex; align-items: center; gap: 9px;
-  padding: 12px 14px;
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
+/* Input row */
+.chat-foot{
+  display:flex;align-items:center;gap:9px;
+  padding:12px 14px;
+  border-top:1px solid var(--line);
+  flex-shrink:0;
 }
-
-.chat-input {
-  flex: 1;
-  padding: 9px 14px;
-  background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: 22px;
-  color: var(--text-1);
-  font-size: 13px; font-family: inherit;
-  outline: none;
-  transition: border-color 0.2s;
+.chat-in{
+  flex:1;padding:9px 16px;
+  background:var(--c3);border:1px solid var(--line);border-radius:22px;
+  color:var(--w1);font-size:13px;font-family:inherit;
+  outline:none;transition:border-color .2s;
 }
-.chat-input::placeholder { color: var(--text-3); }
-.chat-input:focus { border-color: var(--border-focus); }
+.chat-in::placeholder{color:var(--w3)}
+.chat-in:focus{border-color:rgba(10,132,255,.45)}
 
-.btn-send {
-  width: 34px; height: 34px;
-  background: var(--accent); border: none; border-radius: 50%;
-  color: #fff; font-size: 16px; font-weight: 700;
-  cursor: pointer; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  transition: background 0.18s, transform 0.1s;
+.send{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--blue);border:none;
+  color:#fff;font-size:17px;font-weight:700;
+  cursor:pointer;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .18s,transform .1s;
 }
-.btn-send:hover  { background: #409cff; }
-.btn-send:active { transform: scale(0.9); }
-.btn-send:disabled { opacity: 0.35; cursor: not-allowed; }
+.send:hover{background:var(--blue2)}
+.send:active{transform:scale(.9)}
+.send:disabled{opacity:.35;cursor:default}
 
-/* Cached badge */
-.badge-cached {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 2px 8px;
-  background: var(--accent-light);
-  border: 1px solid rgba(10,132,255,0.25);
-  border-radius: 20px;
-  font-size: 10px; font-weight: 500; color: var(--accent);
+.badge-cache{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px;border-radius:20px;
+  background:rgba(10,132,255,.12);border:1px solid rgba(10,132,255,.22);
+  font-size:10px;font-weight:500;color:var(--blue);
 }
 </style>
 </head>
 <body>
 
-<!-- ── Header ── -->
-<header class="header">
-  <div class="header-brand">
-    <div class="brand-mark">✦</div>
-    <span class="brand-name">AI Financial Research</span>
-  </div>
-  <div class="header-meta">
-    <span class="header-powered">GPT-4o · Stooq · Tavily</span>
-    <div class="live-pill">
-      <div class="live-dot"></div>
-      Live
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-brand">
+    <div class="logo">F</div>
+    <div>
+      <span class="brand-text">Fintel</span>
+      <span class="brand-tag">AI Research</span>
     </div>
+  </div>
+  <div class="hdr-right">
+    <span class="hdr-stack">GPT-4o · Stooq · Tavily</span>
+    <div class="badge-live"><div class="dot-live"></div>Live</div>
   </div>
 </header>
 
-<!-- ── Layout ── -->
-<div class="layout">
+<!-- MAIN — side by side -->
+<div class="main">
 
-  <!-- ── Left Panel ── -->
-  <div class="panel-left">
+  <!-- LEFT: Analysis -->
+  <div class="left">
 
-    <div class="search-row">
-      <input class="ticker-input" id="tickerInput"
-             placeholder="Enter ticker — AAPL, TSLA, NVDA, MSFT…" />
-      <button class="btn-analyze" id="analyzeBtn" onclick="analyze()">Analyze</button>
+    <div class="search-wrap">
+      <input class="ticker-field" id="tickerInput"
+             placeholder="Enter ticker symbol — AAPL, TSLA, NVDA, MSFT…"/>
+      <button class="btn-go" id="analyzeBtn" onclick="analyze()">Analyze</button>
     </div>
 
-    <div class="error-bar" id="errorBar">
-      <span>⚠</span><span id="errorText"></span>
-    </div>
+    <div class="err-bar" id="errBar"><span>⚠</span><span id="errTxt"></span></div>
 
-    <div class="loading-box" id="loadingBox">
+    <div class="spin-wrap" id="spinBox">
       <div class="spinner"></div>
-      <div class="loading-title">Running AI Analysis</div>
-      <div class="loading-sub">Fetching market data · Computing indicators<br>Generating insights</div>
+      <div class="spin-label">Running AI Analysis</div>
+      <div class="spin-sub">Fetching market data · Computing indicators<br>Generating insights via GPT-4o</div>
     </div>
 
-    <div class="placeholder-box" id="placeholder">
-      <div class="placeholder-icon">📈</div>
-      <div class="placeholder-title">Financial Intelligence</div>
-      <div class="placeholder-body">
-        Enter any stock ticker for AI-powered analysis — technical indicators,
-        news sentiment, and investment recommendations.
-      </div>
-      <div class="quick-picks">
-        <div class="quick-chip" onclick="quickAnalyze('AAPL')">AAPL</div>
-        <div class="quick-chip" onclick="quickAnalyze('TSLA')">TSLA</div>
-        <div class="quick-chip" onclick="quickAnalyze('NVDA')">NVDA</div>
-        <div class="quick-chip" onclick="quickAnalyze('MSFT')">MSFT</div>
-        <div class="quick-chip" onclick="quickAnalyze('GOOGL')">GOOGL</div>
+    <!-- Placeholder -->
+    <div class="home" id="homeBox">
+      <div class="home-icon">📈</div>
+      <div class="home-h">Financial Intelligence</div>
+      <div class="home-p">Enter any ticker for AI-powered analysis — technical indicators, news sentiment, and investment recommendations.</div>
+      <div class="quick">
+        <div class="qc" onclick="go('AAPL')">AAPL</div>
+        <div class="qc" onclick="go('TSLA')">TSLA</div>
+        <div class="qc" onclick="go('NVDA')">NVDA</div>
+        <div class="qc" onclick="go('MSFT')">MSFT</div>
+        <div class="qc" onclick="go('GOOGL')">GOOGL</div>
       </div>
     </div>
 
     <!-- Results -->
     <div id="results">
-      <div class="metric-row">
-        <div class="metric-card">
-          <div class="metric-label">Current Price</div>
-          <div class="metric-value" id="price">—</div>
-          <div class="metric-sub" id="company">—</div>
+
+      <div class="cards3">
+        <div class="mcard" id="priceCard">
+          <div class="mlabel">Current Price</div>
+          <div class="mval" id="price">—</div>
+          <div class="msub" id="company">—</div>
         </div>
-        <div class="metric-card">
-          <div class="metric-label">Recommendation</div>
-          <div class="metric-value" id="recommendation">—</div>
-          <div class="metric-sub" id="trend">—</div>
+        <div class="mcard" id="recCard">
+          <div class="mlabel">Recommendation</div>
+          <div class="mval" id="rec">—</div>
+          <div class="msub" id="trend">—</div>
         </div>
-        <div class="metric-card">
-          <div class="metric-label">Confidence</div>
-          <div class="metric-value" id="confidence">—</div>
-          <div class="metric-sub" id="cachedBadge"></div>
+        <div class="mcard">
+          <div class="mlabel">Confidence</div>
+          <div class="mval" id="conf">—</div>
+          <div class="msub" id="cache"></div>
         </div>
       </div>
 
-      <div class="chart-card">
-        <div class="card-header">
-          <span class="card-title" id="chartTitle">Price History</span>
-          <span class="card-badge">90 days</span>
+      <div class="chart-block">
+        <div class="block-hd">
+          <span class="block-title" id="chartTitle">Price History</span>
+          <span class="block-tag">90 days</span>
         </div>
-        <canvas id="priceChart" height="72"></canvas>
+        <canvas id="chart" height="72"></canvas>
       </div>
 
-      <div class="indicators-row">
-        <div class="ind-card">
-          <div class="ind-label">MA 50</div>
-          <div class="ind-value" id="ma50">—</div>
-        </div>
-        <div class="ind-card">
-          <div class="ind-label">MA 200</div>
-          <div class="ind-value" id="ma200">—</div>
-        </div>
-        <div class="ind-card">
-          <div class="ind-label">RSI (14)</div>
-          <div class="ind-value" id="rsi">—</div>
-        </div>
-        <div class="ind-card">
-          <div class="ind-label">1Y Change</div>
-          <div class="ind-value" id="priceChange">—</div>
-        </div>
+      <div class="ind4">
+        <div class="icard"><div class="ilabel">MA 50</div><div class="ival" id="ma50">—</div></div>
+        <div class="icard"><div class="ilabel">MA 200</div><div class="ival" id="ma200">—</div></div>
+        <div class="icard"><div class="ilabel">RSI (14)</div><div class="ival" id="rsi">—</div></div>
+        <div class="icard"><div class="ilabel">1Y Change</div><div class="ival" id="chg">—</div></div>
       </div>
 
-      <div class="text-card-full">
-        <div class="text-label">Reasoning</div>
-        <div class="text-body" id="reasoning">—</div>
+      <div class="text-full">
+        <div class="tl">Reasoning</div>
+        <div class="tb" id="reasoning">—</div>
       </div>
 
-      <div class="text-row">
-        <div class="text-card">
-          <div class="text-label">News Summary</div>
-          <div class="text-body" id="newsSummary">—</div>
-        </div>
-        <div class="text-card">
-          <div class="text-label">Risk Assessment</div>
-          <div class="text-body" id="riskAssessment">—</div>
-        </div>
+      <div class="text2">
+        <div class="tcard"><div class="tl">News Summary</div><div class="tb" id="news">—</div></div>
+        <div class="tcard"><div class="tl">Risk Assessment</div><div class="tb" id="risk">—</div></div>
       </div>
-    </div>
 
-  </div><!-- /panel-left -->
+    </div><!-- /results -->
+  </div><!-- /left -->
 
-  <!-- ── Right Panel: Chat ── -->
-  <div class="panel-right">
-
-    <div class="chat-head">
-      <div class="chat-avatar">✦</div>
+  <!-- RIGHT: Chat -->
+  <div class="right">
+    <div class="chat-hdr">
+      <div class="chat-av">✦</div>
       <div>
-        <div class="chat-head-title">AI Assistant</div>
-        <div class="chat-head-sub" id="chatSub">Ask about any stock</div>
+        <div class="chat-hdr-name">AI Assistant</div>
+        <div class="chat-hdr-sub" id="chatSub">Ask about any stock</div>
       </div>
     </div>
 
-    <div class="chat-body" id="chatBody">
-      <div class="chat-empty-state" id="chatEmpty">
-        <div class="chat-empty-icon">✦</div>
-        <div class="chat-empty-title">Ask me anything</div>
-        <div class="chat-empty-body">
-          I can fetch live prices, compare multiple stocks,
-          and give buy / sell / hold recommendations.
-        </div>
+    <div class="msgs" id="msgs">
+      <div class="empty-chat" id="emptyChat">
+        <div class="empty-icon">✦</div>
+        <div class="empty-h">Ask me anything</div>
+        <div class="empty-p">Fetch live prices, compare stocks, or get buy / sell / hold recommendations for any ticker.</div>
       </div>
     </div>
 
-    <div class="suggestions">
-      <div class="sug-chip" onclick="suggest('Should I buy this stock?')">Should I buy?</div>
-      <div class="sug-chip" onclick="suggest('What is the price of TSLA?')">TSLA price</div>
-      <div class="sug-chip" onclick="suggest('Compare AAPL and MSFT')">Compare stocks</div>
-      <div class="sug-chip" onclick="suggest('What are the key risks?')">Key risks</div>
+    <div class="chips">
+      <div class="chip" onclick="ask('Should I buy this stock?')">Should I buy?</div>
+      <div class="chip" onclick="ask('What is the price of TSLA?')">TSLA price</div>
+      <div class="chip" onclick="ask('Compare AAPL and MSFT')">Compare stocks</div>
+      <div class="chip" onclick="ask('What are the main risks?')">Key risks</div>
     </div>
 
     <div class="chat-foot">
-      <input class="chat-input" id="chatInput" placeholder="Ask about any stock…" />
-      <button class="btn-send" id="sendBtn" onclick="sendChat()">↑</button>
+      <input class="chat-in" id="chatIn" placeholder="Ask about any stock…"/>
+      <button class="send" id="sendBtn" onclick="send()">↑</button>
     </div>
+  </div><!-- /right -->
 
-  </div><!-- /panel-right -->
-
-</div><!-- /layout -->
+</div><!-- /main -->
 
 <script>
-let chart = null;
-let currentTicker     = null;
-let currentSessionId  = null;
-let currentData       = null;
+let myChart=null, ticker=null, sid=null, analysis=null;
 
-/* ── Quick Analyze ── */
-function quickAnalyze(t) {
-  document.getElementById('tickerInput').value = t;
-  analyze();
-}
+function go(t){document.getElementById('tickerInput').value=t;analyze()}
 
-/* ── Analyze ── */
-async function analyze() {
-  const ticker = document.getElementById('tickerInput').value.trim().toUpperCase();
-  if (!ticker) return;
-
-  hide('errorBar');
-  hide('results');
-  hide('placeholder');
-  show('loadingBox', 'flex');
-  document.getElementById('analyzeBtn').disabled = true;
-
-  try {
-    const res  = await fetch('/api/v1/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ticker, include_news: true }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || 'Analysis failed');
-
-    currentData = data;
-    renderResults(data);
-  } catch (err) {
-    document.getElementById('errorText').textContent = err.message;
-    show('errorBar', 'flex');
-    show('placeholder', 'flex');
-  } finally {
-    hide('loadingBox');
-    document.getElementById('analyzeBtn').disabled = false;
+async function analyze(){
+  const t=document.getElementById('tickerInput').value.trim().toUpperCase();
+  if(!t)return;
+  hide('errBar');hide('results');hide('homeBox');
+  show('spinBox','flex');
+  document.getElementById('analyzeBtn').disabled=true;
+  try{
+    const r=await fetch('/api/v1/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticker:t,include_news:true})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.detail||'Analysis failed');
+    analysis=d; render(d);
+  }catch(e){
+    document.getElementById('errTxt').textContent=e.message;
+    show('errBar','flex');show('homeBox','flex');
+  }finally{
+    hide('spinBox');
+    document.getElementById('analyzeBtn').disabled=false;
   }
 }
 
-/* ── Render Results ── */
-function renderResults(d) {
-  const ind = d.technical_indicators || {};
-  currentTicker    = d.ticker;
-  currentSessionId = d.session_id;
+function render(d){
+  const ind=d.technical_indicators||{};
+  ticker=d.ticker; sid=d.session_id;
+  document.getElementById('chatSub').textContent='Analyzing '+d.ticker;
+  document.getElementById('emptyChat').style.display='none';
 
-  document.getElementById('chatSub').textContent = `Analyzing ${d.ticker}`;
-  document.getElementById('chatEmpty').style.display = 'none';
+  // Price card
+  document.getElementById('price').textContent=d.current_price?'$'+d.current_price.toLocaleString():'—';
+  document.getElementById('company').textContent=d.company_name||d.ticker;
 
-  /* price */
-  document.getElementById('price').textContent   = d.current_price ? '$' + d.current_price.toLocaleString() : '—';
-  document.getElementById('company').textContent = d.company_name || d.ticker;
-  document.getElementById('trend').textContent   = d.trend_analysis || '—';
+  // Rec card — color + glow
+  const rec=(d.recommendation||'').toUpperCase();
+  const recEl=document.getElementById('rec');
+  const recCard=document.getElementById('recCard');
+  recEl.textContent=rec||'—';
+  recEl.className='mval';
+  recCard.className='mcard';
+  if(rec==='BUY'){recEl.classList.add('green');recCard.classList.add('glow-green')}
+  else if(rec==='SELL'){recEl.classList.add('red');recCard.classList.add('glow-red')}
+  else if(rec==='HOLD'){recEl.classList.add('amber');recCard.classList.add('glow-amber')}
+  else{recEl.classList.add('dim')}
+  document.getElementById('trend').textContent=d.trend_analysis||'—';
 
-  /* recommendation */
-  const rec   = (d.recommendation || 'insufficient_data').toLowerCase();
-  const recEl = document.getElementById('recommendation');
-  recEl.textContent = d.recommendation || '—';
-  recEl.className   = 'metric-value col-' + rec;
+  // Confidence
+  document.getElementById('conf').textContent=d.confidence_score?Math.round(d.confidence_score*100)+'%':'—';
+  document.getElementById('cache').innerHTML=d.cached?'<span class="badge-cache">⚡ cached</span>':'';
 
-  /* confidence */
-  document.getElementById('confidence').textContent  = d.confidence_score ? Math.round(d.confidence_score * 100) + '%' : '—';
-  document.getElementById('cachedBadge').innerHTML   = d.cached ? '<span class="badge-cached">⚡ cached</span>' : '';
+  // Indicators
+  document.getElementById('ma50').textContent=ind.ma_50?'$'+ind.ma_50:'—';
+  document.getElementById('ma200').textContent=ind.ma_200?'$'+ind.ma_200:'—';
+  const rsiEl=document.getElementById('rsi');
+  rsiEl.textContent=ind.rsi||'—';
+  rsiEl.className='ival'+(ind.rsi>70?' red':ind.rsi<30?' green':'');
+  const chgEl=document.getElementById('chg');
+  const c=ind.price_change_pct;
+  chgEl.textContent=c!==undefined?(c>0?'+':'')+c+'%':'—';
+  chgEl.className='ival'+(c>0?' green':c<0?' red':'');
 
-  /* indicators */
-  document.getElementById('ma50').textContent  = ind.ma_50  ? '$' + ind.ma_50  : '—';
-  document.getElementById('ma200').textContent = ind.ma_200 ? '$' + ind.ma_200 : '—';
+  // Text
+  document.getElementById('reasoning').textContent=d.reasoning||'—';
+  document.getElementById('news').textContent=d.news_summary||'—';
+  document.getElementById('risk').textContent=d.risk_assessment||'—';
 
-  const rsiEl = document.getElementById('rsi');
-  rsiEl.textContent  = ind.rsi || '—';
-  rsiEl.style.color  = ind.rsi > 70 ? 'var(--red)' : ind.rsi < 30 ? 'var(--green)' : '';
-
-  const chgEl = document.getElementById('priceChange');
-  const chg   = ind.price_change_pct;
-  chgEl.textContent = chg !== undefined ? (chg > 0 ? '+' : '') + chg + '%' : '—';
-  chgEl.style.color = chg > 0 ? 'var(--green)' : chg < 0 ? 'var(--red)' : '';
-
-  /* text */
-  document.getElementById('reasoning').textContent     = d.reasoning      || '—';
-  document.getElementById('newsSummary').textContent   = d.news_summary   || '—';
-  document.getElementById('riskAssessment').textContent= d.risk_assessment|| '—';
-
-  document.getElementById('chartTitle').textContent = d.ticker + ' · Price History';
-  renderChart(d.price_history || []);
-
-  show('results', 'block');
+  document.getElementById('chartTitle').textContent=d.ticker+' · Price History';
+  drawChart(d.price_history||[]);
+  show('results','block');
 }
 
-/* ── Chart ── */
-function renderChart(history) {
-  if (chart) chart.destroy();
-  const labels = history.map(h => h.date);
-  const prices = history.map(h => h.close);
-
-  const ctx  = document.getElementById('priceChart').getContext('2d');
-  const grad = ctx.createLinearGradient(0, 0, 0, 220);
-  grad.addColorStop(0, 'rgba(10,132,255,0.22)');
-  grad.addColorStop(1, 'rgba(10,132,255,0)');
-
-  chart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        data: prices,
-        borderColor: '#0a84ff',
-        backgroundColor: grad,
-        borderWidth: 1.5,
-        pointRadius: 0,
-        fill: true,
-        tension: 0.3,
-      }],
-    },
-    options: {
-      responsive: true,
-      interaction: { intersect: false, mode: 'index' },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: 'rgba(28,28,30,0.95)',
-          titleColor: 'rgba(235,235,245,0.4)',
-          bodyColor: '#ffffff',
-          borderColor: 'rgba(255,255,255,0.1)',
-          borderWidth: 1, padding: 10,
-          titleFont: { size: 11 },
-          bodyFont:  { size: 13, weight: '600' },
-          callbacks: { label: c => '$' + c.parsed.y.toLocaleString() },
-        },
+function drawChart(h){
+  if(myChart)myChart.destroy();
+  const labels=h.map(x=>x.date), prices=h.map(x=>x.close);
+  const ctx=document.getElementById('chart').getContext('2d');
+  const g=ctx.createLinearGradient(0,0,0,220);
+  g.addColorStop(0,'rgba(10,132,255,.2)');g.addColorStop(1,'rgba(10,132,255,0)');
+  myChart=new Chart(ctx,{
+    type:'line',
+    data:{labels,datasets:[{data:prices,borderColor:'#0a84ff',backgroundColor:g,borderWidth:1.5,pointRadius:0,fill:true,tension:.3}]},
+    options:{
+      responsive:true,interaction:{intersect:false,mode:'index'},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'rgba(17,17,19,.96)',titleColor:'rgba(255,255,255,.35)',
+          bodyColor:'#fff',borderColor:'rgba(255,255,255,.08)',borderWidth:1,
+          padding:10,titleFont:{size:11},bodyFont:{size:13,weight:'600'},
+          callbacks:{label:c=>'$'+c.parsed.y.toLocaleString()}
+        }
       },
-      scales: {
-        x: {
-          ticks: { color: 'rgba(235,235,245,0.28)', maxTicksLimit: 6, font: { size: 11 } },
-          grid:  { color: 'rgba(255,255,255,0.04)' },
-          border:{ display: false },
-        },
-        y: {
-          ticks: { color: 'rgba(235,235,245,0.28)', font: { size: 11 }, callback: v => '$' + v.toLocaleString() },
-          grid:  { color: 'rgba(255,255,255,0.04)' },
-          border:{ display: false },
-        },
-      },
-    },
+      scales:{
+        x:{ticks:{color:'rgba(255,255,255,.22)',maxTicksLimit:6,font:{size:11}},grid:{color:'rgba(255,255,255,.04)'},border:{display:false}},
+        y:{ticks:{color:'rgba(255,255,255,.22)',font:{size:11},callback:v=>'$'+v.toLocaleString()},grid:{color:'rgba(255,255,255,.04)'},border:{display:false}}
+      }
+    }
   });
 }
 
-/* ── Chat ── */
-function suggest(text) {
-  document.getElementById('chatInput').value = text;
-  sendChat();
+function ask(t){document.getElementById('chatIn').value=t;send()}
+
+async function send(){
+  const inp=document.getElementById('chatIn');
+  const msg=inp.value.trim();if(!msg)return;
+  inp.value='';document.getElementById('sendBtn').disabled=true;
+  document.getElementById('emptyChat').style.display='none';
+  const box=document.getElementById('msgs');
+  addMsg(box,'msg-u',msg);
+  const ty=document.createElement('div');
+  ty.className='msg-typing';ty.innerHTML='<div class="dots"><span></span><span></span><span></span></div>';
+  box.appendChild(ty);box.scrollTop=99999;
+  try{
+    const ind=analysis?.technical_indicators||{};
+    const r=await fetch('/api/v1/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ticker:ticker||'',message:msg,session_id:sid,
+        current_price:analysis?.current_price,recommendation:analysis?.recommendation,
+        confidence_score:analysis?.confidence_score,rsi:ind.rsi,
+        ma_50:ind.ma_50,ma_200:ind.ma_200,price_change_pct:ind.price_change_pct})});
+    const data=await r.json();
+    sid=data.session_id;ty.remove();addMsg(box,'msg-a',data.reply);
+  }catch{ty.remove();const e=addMsg(box,'msg-a','Something went wrong. Please try again.');e.style.color='var(--red)'}
+  box.scrollTop=99999;
+  document.getElementById('sendBtn').disabled=false;
 }
 
-async function sendChat() {
-  const input   = document.getElementById('chatInput');
-  const message = input.value.trim();
-  if (!message) return;
+function addMsg(c,cls,txt){const d=document.createElement('div');d.className=cls;d.textContent=txt;c.appendChild(d);return d}
+function show(id,d='block'){document.getElementById(id).style.display=d}
+function hide(id){document.getElementById(id).style.display='none'}
 
-  input.value = '';
-  document.getElementById('sendBtn').disabled = true;
-  document.getElementById('chatEmpty').style.display = 'none';
-
-  const box = document.getElementById('chatBody');
-
-  appendMsg(box, 'msg-user', message);
-
-  const typing = document.createElement('div');
-  typing.className = 'msg-typing';
-  typing.innerHTML = '<div class="dots"><span></span><span></span><span></span></div>';
-  box.appendChild(typing);
-  box.scrollTop = box.scrollHeight;
-
-  try {
-    const ind = currentData?.technical_indicators || {};
-    const res = await fetch('/api/v1/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ticker:           currentTicker || '',
-        message,
-        session_id:       currentSessionId,
-        current_price:    currentData?.current_price,
-        recommendation:   currentData?.recommendation,
-        confidence_score: currentData?.confidence_score,
-        rsi:              ind.rsi,
-        ma_50:            ind.ma_50,
-        ma_200:           ind.ma_200,
-        price_change_pct: ind.price_change_pct,
-      }),
-    });
-    const data = await res.json();
-    currentSessionId = data.session_id;
-    typing.remove();
-    appendMsg(box, 'msg-ai', data.reply);
-  } catch {
-    typing.remove();
-    const e = appendMsg(box, 'msg-ai', 'Something went wrong. Please try again.');
-    e.style.color = 'var(--red)';
-  }
-
-  box.scrollTop = box.scrollHeight;
-  document.getElementById('sendBtn').disabled = false;
-}
-
-function appendMsg(container, cls, text) {
-  const d = document.createElement('div');
-  d.className   = cls;
-  d.textContent = text;
-  container.appendChild(d);
-  return d;
-}
-
-/* ── Helpers ── */
-function show(id, display = 'block') {
-  document.getElementById(id).style.display = display;
-}
-function hide(id) {
-  document.getElementById(id).style.display = 'none';
-}
-
-/* ── Keyboard ── */
-document.getElementById('tickerInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') analyze();
-});
-document.getElementById('chatInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
-});
+document.getElementById('tickerInput').addEventListener('keydown',e=>{if(e.key==='Enter')analyze()});
+document.getElementById('chatIn').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
 </script>
 </body>
 </html>
