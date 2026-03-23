@@ -75,9 +75,14 @@ async def run_analysis(
         + risk["penalty"]
     )
 
+    # When fundamentals are unavailable the theoretical max is 40 (not 80).
+    # Pass this to make_deterministic_decision so thresholds scale fairly.
+    fundamental_available = fundamentals.get("data_available", False)
+    max_possible_score = 80 if fundamental_available else 40
+
     # 5c — Confidence (no guessing — based on data completeness + signal agreement)
     confidence_result = compute_confidence(
-        fundamental_available=fundamentals.get("data_available", False),
+        fundamental_available=fundamental_available,
         fundamental_missing_count=len(fundamentals.get("missing_fields", [])),
         technical_score=tech_score["score"],
         fundamental_score=fund_score["score"],
@@ -88,13 +93,14 @@ async def run_analysis(
     confidence = confidence_result["confidence"]
 
     logger.info("scores_computed", ticker=ticker,
-                total=total_score, technical=tech_score["score"],
+                total=total_score, max_possible=max_possible_score,
+                technical=tech_score["score"],
                 fundamental=fund_score["score"], sentiment=sent_score["score"],
                 risk_penalty=risk["penalty"], confidence=confidence)
 
     # ── Step 6: Deterministic decision ───────────────────────────────────────
     logger.info("step_6_decision", ticker=ticker)
-    decision_str = make_deterministic_decision(total_score, confidence)
+    decision_str = make_deterministic_decision(total_score, confidence, max_score=max_possible_score)
 
     # ── Step 7: LLM generates explanation (cannot override decision) ─────────
     logger.info("step_7_explanation", ticker=ticker)
@@ -154,6 +160,7 @@ async def run_analysis(
         cached=False,
         # Score breakdown
         total_score=total_score,
+        max_score=max_possible_score,
         technical_score=tech_score["score"],
         fundamental_score=fund_score["score"],
         sentiment_score=sent_score["score"],

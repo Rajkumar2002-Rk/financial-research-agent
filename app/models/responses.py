@@ -47,6 +47,7 @@ class AnalysisResponse(BaseModel):
     cached: bool = False
     # Deterministic scoring fields
     total_score: Optional[int] = None
+    max_score: Optional[int] = 80          # 40 when fundamental data unavailable
     technical_score: Optional[int] = None
     fundamental_score: Optional[int] = None
     sentiment_score: Optional[int] = None

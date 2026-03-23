@@ -654,14 +654,17 @@ function render(d){
 
   // ── Score Breakdown ──
   const ts=d.total_score;
+  const maxSc=d.max_score||80;
+  const buyThr=Math.round(60*(maxSc/80));   // 60 full data, 30 no fundamentals
+  const holdThr=Math.round(40*(maxSc/80));  // 40 full data, 20 no fundamentals
   const tsEl=document.getElementById('totalScore');
   if(ts!==null&&ts!==undefined){
-    tsEl.textContent=ts+' / 80';
-    tsEl.className='score-total-val '+(ts>=60?'green':ts>=40?'amber':'red');
-    const pct=Math.max(0,Math.min(100,Math.round((ts/80)*100)));
+    tsEl.textContent=ts+' / '+maxSc;
+    tsEl.className='score-total-val '+(ts>=buyThr?'green':ts>=holdThr?'amber':'red');
+    const pct=Math.max(0,Math.min(100,Math.round((ts/maxSc)*100)));
     const fill=document.getElementById('scoreBarFill');
     fill.style.width=pct+'%';
-    fill.style.background=ts>=60?'var(--green)':ts>=40?'var(--amber)':'var(--red)';
+    fill.style.background=ts>=buyThr?'var(--green)':ts>=holdThr?'var(--amber)':'var(--red)';
   }else{tsEl.textContent='—';tsEl.className='score-total-val dim'}
 
   function setBar(barId,valId,score,max,color){

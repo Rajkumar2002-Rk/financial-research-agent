@@ -289,12 +289,24 @@ def compute_confidence(
 
 # ─── Final Decision ───────────────────────────────────────────────────────────
 
-def make_deterministic_decision(total_score: int, confidence: int) -> str:
+def make_deterministic_decision(total_score: int, confidence: int, max_score: int = 80) -> str:
+    """
+    max_score: the highest score achievable given available data.
+    When fundamental data is unavailable, max is 40 (not 80), so
+    thresholds are scaled proportionally to keep decisions fair.
+      Full data:    BUY >= 60/80 (75%),  HOLD >= 40/80 (50%)
+      No fund data: BUY >= 30/40 (75%),  HOLD >= 20/40 (50%)
+    """
     if confidence < 20:
         return "INSUFFICIENT_DATA"
-    if total_score >= 60:
+
+    scale = max_score / 80
+    buy_threshold  = int(60 * scale)   # 60 with fundamentals, 30 without
+    hold_threshold = int(40 * scale)   # 40 with fundamentals, 20 without
+
+    if total_score >= buy_threshold:
         return "BUY"
-    elif total_score >= 40:
+    elif total_score >= hold_threshold:
         return "HOLD"
     else:
         return "SELL"
