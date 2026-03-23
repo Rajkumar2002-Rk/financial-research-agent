@@ -362,6 +362,55 @@ body{
   background:rgba(10,132,255,.12);border:1px solid rgba(10,132,255,.22);
   font-size:10px;font-weight:500;color:var(--blue);
 }
+
+/* ── Score Breakdown ── */
+.score-block{
+  background:var(--c2);border:1px solid var(--line);border-radius:var(--r2);
+  padding:18px 20px;margin-bottom:12px;
+}
+.score-total-row{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:16px;
+}
+.score-total-label{font-size:11px;font-weight:600;color:var(--w3);text-transform:uppercase;letter-spacing:.09em}
+.score-total-val{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.score-bar-wrap{
+  width:100%;height:6px;background:var(--c4);border-radius:3px;
+  margin-bottom:16px;overflow:hidden;
+}
+.score-bar-fill{height:100%;border-radius:3px;transition:width .6s ease}
+.score-rows{display:flex;flex-direction:column;gap:8px}
+.score-row{display:flex;align-items:center;gap:10px}
+.score-row-label{font-size:11px;color:var(--w3);width:100px;flex-shrink:0}
+.score-row-bar{flex:1;height:4px;background:var(--c4);border-radius:2px;overflow:hidden}
+.score-row-fill{height:100%;border-radius:2px}
+.score-row-val{font-size:11px;font-weight:600;width:42px;text-align:right;flex-shrink:0}
+
+/* ── Fundamental Data ── */
+.fund-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.fund-card{
+  background:var(--c2);border:1px solid var(--line);border-radius:var(--r);
+  padding:12px 14px;
+}
+.fund-label{font-size:10px;font-weight:600;color:var(--w3);text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px}
+.fund-val{font-size:15px;font-weight:600}
+.fund-na{font-size:13px;color:var(--w3);font-style:italic}
+
+/* ── Key Factors ── */
+.factors-list{display:flex;flex-direction:column;gap:6px}
+.factor-item{
+  display:flex;align-items:flex-start;gap:8px;
+  font-size:13px;line-height:1.5;color:rgba(255,255,255,.72);
+}
+.factor-dot{width:5px;height:5px;border-radius:50%;background:var(--blue);margin-top:6px;flex-shrink:0}
+
+/* ── Data Gaps ── */
+.gap-pill{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 9px;border-radius:20px;
+  background:rgba(255,214,10,.08);border:1px solid rgba(255,214,10,.2);
+  font-size:10px;font-weight:500;color:var(--amber);margin:2px;
+}
 </style>
 </head>
 <body>
@@ -436,6 +485,49 @@ body{
         </div>
       </div>
 
+      <!-- Score Breakdown -->
+      <div class="score-block" id="scoreBlock">
+        <div class="score-total-row">
+          <span class="score-total-label">Decision Score</span>
+          <span class="score-total-val" id="totalScore">—</span>
+        </div>
+        <div class="score-bar-wrap">
+          <div class="score-bar-fill" id="scoreBarFill" style="width:0%;background:var(--green)"></div>
+        </div>
+        <div class="score-rows">
+          <div class="score-row">
+            <span class="score-row-label">Technical</span>
+            <div class="score-row-bar"><div class="score-row-fill" id="techBar" style="width:0%;background:var(--blue)"></div></div>
+            <span class="score-row-val" id="techVal">—</span>
+          </div>
+          <div class="score-row">
+            <span class="score-row-label">Fundamental</span>
+            <div class="score-row-bar"><div class="score-row-fill" id="fundBar" style="width:0%;background:var(--purple)"></div></div>
+            <span class="score-row-val" id="fundVal">—</span>
+          </div>
+          <div class="score-row">
+            <span class="score-row-label">Sentiment</span>
+            <div class="score-row-bar"><div class="score-row-fill" id="sentBar" style="width:0%;background:var(--amber)"></div></div>
+            <span class="score-row-val" id="sentVal">—</span>
+          </div>
+          <div class="score-row">
+            <span class="score-row-label">Risk Penalty</span>
+            <div class="score-row-bar"><div class="score-row-fill" id="riskBar" style="width:0%;background:var(--red)"></div></div>
+            <span class="score-row-val" id="riskVal">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fundamental Data -->
+      <div class="fund-grid" id="fundGrid">
+        <div class="fund-card"><div class="fund-label">P/E Ratio</div><div class="fund-val fund-na" id="pe">—</div></div>
+        <div class="fund-card"><div class="fund-label">EPS</div><div class="fund-val fund-na" id="eps">—</div></div>
+        <div class="fund-card"><div class="fund-label">Revenue Growth</div><div class="fund-val fund-na" id="revGrowth">—</div></div>
+        <div class="fund-card"><div class="fund-label">Profit Margin</div><div class="fund-val fund-na" id="profitMargin">—</div></div>
+        <div class="fund-card"><div class="fund-label">Debt / Equity</div><div class="fund-val fund-na" id="deRatio">—</div></div>
+        <div class="fund-card"><div class="fund-label">Free Cash Flow</div><div class="fund-val fund-na" id="fcf">—</div></div>
+      </div>
+
       <div class="chart-block">
         <div class="block-hd">
           <span class="block-title" id="chartTitle">Price History</span>
@@ -459,6 +551,17 @@ body{
       <div class="text2">
         <div class="tcard"><div class="tl">News Summary</div><div class="tb" id="news">—</div></div>
         <div class="tcard"><div class="tl">Risk Assessment</div><div class="tb" id="risk">—</div></div>
+      </div>
+
+      <!-- Key Factors -->
+      <div class="text-full" id="keyFactorsBlock" style="display:none">
+        <div class="tl">Key Factors</div>
+        <div class="factors-list" id="keyFactorsList"></div>
+      </div>
+
+      <!-- Data Gaps -->
+      <div id="dataGapsBlock" style="display:none;margin-bottom:10px">
+        <div id="dataGapsList" style="display:flex;flex-wrap:wrap;gap:4px"></div>
       </div>
 
     </div><!-- /results -->
@@ -528,11 +631,11 @@ function render(d){
   document.getElementById('chatSub').textContent='Analyzing '+d.ticker;
   document.getElementById('emptyChat').style.display='none';
 
-  // Price card
-  document.getElementById('price').textContent=d.current_price?'$'+d.current_price.toLocaleString():'—';
+  // ── Price card ──
+  document.getElementById('price').textContent=d.current_price?'$'+d.current_price.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}):'—';
   document.getElementById('company').textContent=d.company_name||d.ticker;
 
-  // Rec card — color + glow
+  // ── Rec card — color + glow ──
   const rec=(d.recommendation||'').toUpperCase();
   const recEl=document.getElementById('rec');
   const recCard=document.getElementById('recCard');
@@ -545,25 +648,89 @@ function render(d){
   else{recEl.classList.add('dim')}
   document.getElementById('trend').textContent=d.trend_analysis||'—';
 
-  // Confidence
+  // ── Confidence ──
   document.getElementById('conf').textContent=d.confidence_score?Math.round(d.confidence_score*100)+'%':'—';
   document.getElementById('cache').innerHTML=d.cached?'<span class="badge-cache">⚡ cached</span>':'';
 
-  // Indicators
-  document.getElementById('ma50').textContent=ind.ma_50?'$'+ind.ma_50:'—';
-  document.getElementById('ma200').textContent=ind.ma_200?'$'+ind.ma_200:'—';
+  // ── Score Breakdown ──
+  const ts=d.total_score;
+  const tsEl=document.getElementById('totalScore');
+  if(ts!==null&&ts!==undefined){
+    tsEl.textContent=ts+' / 80';
+    tsEl.className='score-total-val '+(ts>=60?'green':ts>=40?'amber':'red');
+    const pct=Math.max(0,Math.min(100,Math.round((ts/80)*100)));
+    const fill=document.getElementById('scoreBarFill');
+    fill.style.width=pct+'%';
+    fill.style.background=ts>=60?'var(--green)':ts>=40?'var(--amber)':'var(--red)';
+  }else{tsEl.textContent='—';tsEl.className='score-total-val dim'}
+
+  function setBar(barId,valId,score,max,color){
+    const v=score!==null&&score!==undefined;
+    document.getElementById(valId).textContent=v?score+' / '+max:'—';
+    const pct=v?Math.max(0,Math.min(100,Math.round((Math.abs(score)/max)*100))):0;
+    const el=document.getElementById(barId);
+    el.style.width=pct+'%';
+    el.style.background=color;
+  }
+  setBar('techBar','techVal',d.technical_score,25,'var(--blue)');
+  setBar('fundBar','fundVal',d.fundamental_score,40,'var(--purple)');
+  setBar('sentBar','sentVal',d.sentiment_score,15,'var(--amber)');
+  const rp=d.risk_penalty;
+  document.getElementById('riskVal').textContent=(rp!==null&&rp!==undefined)?rp+' / 0':'—';
+  const riskPct=(rp!==null&&rp!==undefined)?Math.round((Math.abs(rp)/20)*100):0;
+  document.getElementById('riskBar').style.width=riskPct+'%';
+  document.getElementById('riskBar').style.background='var(--red)';
+
+  // ── Fundamental Data ──
+  const fd=d.fundamental_data||{};
+  function fmtFund(id,val,fmt){
+    const el=document.getElementById(id);
+    if(val===null||val===undefined||val===0){
+      el.textContent='N/A';el.className='fund-val fund-na';
+    }else{
+      el.textContent=fmt(val);el.className='fund-val';
+    }
+  }
+  fmtFund('pe',fd.pe_ratio,v=>v.toFixed(1)+'x');
+  fmtFund('eps',fd.eps,v=>'$'+v.toFixed(2));
+  fmtFund('revGrowth',fd.revenue_growth,v=>(v*100).toFixed(1)+'%');
+  fmtFund('profitMargin',fd.profit_margin,v=>(v*100).toFixed(1)+'%');
+  fmtFund('deRatio',fd.debt_to_equity,v=>v.toFixed(2));
+  fmtFund('fcf',fd.free_cash_flow,v=>{
+    const b=v/1e9;
+    return Math.abs(b)>=1?'$'+b.toFixed(1)+'B':'$'+(v/1e6).toFixed(0)+'M';
+  });
+
+  // ── Technical Indicators ──
+  document.getElementById('ma50').textContent=ind.ma_50?'$'+Number(ind.ma_50).toFixed(2):'—';
+  document.getElementById('ma200').textContent=ind.ma_200?'$'+Number(ind.ma_200).toFixed(2):'—';
   const rsiEl=document.getElementById('rsi');
-  rsiEl.textContent=ind.rsi||'—';
+  rsiEl.textContent=ind.rsi?Number(ind.rsi).toFixed(1):'—';
   rsiEl.className='ival'+(ind.rsi>70?' red':ind.rsi<30?' green':'');
   const chgEl=document.getElementById('chg');
   const c=ind.price_change_pct;
-  chgEl.textContent=c!==undefined?(c>0?'+':'')+c+'%':'—';
+  chgEl.textContent=c!==undefined?(c>0?'+':'')+Number(c).toFixed(1)+'%':'—';
   chgEl.className='ival'+(c>0?' green':c<0?' red':'');
 
-  // Text
+  // ── Text ──
   document.getElementById('reasoning').textContent=d.reasoning||'—';
   document.getElementById('news').textContent=d.news_summary||'—';
   document.getElementById('risk').textContent=d.risk_assessment||'—';
+
+  // ── Key Factors ──
+  const kfBlock=document.getElementById('keyFactorsBlock');
+  const kfList=document.getElementById('keyFactorsList');
+  if(d.key_factors&&d.key_factors.length){
+    kfBlock.style.display='block';
+    kfList.innerHTML=d.key_factors.map(f=>`<div class="factor-item"><div class="factor-dot"></div><span>${f}</span></div>`).join('');
+  }else{kfBlock.style.display='none'}
+
+  // ── Data Gaps ──
+  const dgBlock=document.getElementById('dataGapsBlock');
+  if(d.data_gaps&&d.data_gaps.length){
+    dgBlock.style.display='block';
+    document.getElementById('dataGapsList').innerHTML=d.data_gaps.map(g=>`<span class="gap-pill">⚠ ${g}</span>`).join('');
+  }else{dgBlock.style.display='none'}
 
   document.getElementById('chartTitle').textContent=d.ticker+' · Price History';
   drawChart(d.price_history||[]);

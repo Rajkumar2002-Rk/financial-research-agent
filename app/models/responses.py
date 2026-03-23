@@ -45,6 +45,17 @@ class AnalysisResponse(BaseModel):
     session_id: str
     analysis_timestamp: datetime = Field(default_factory=datetime.utcnow)
     cached: bool = False
+    # Deterministic scoring fields
+    total_score: Optional[int] = None
+    technical_score: Optional[int] = None
+    fundamental_score: Optional[int] = None
+    sentiment_score: Optional[int] = None
+    risk_penalty: Optional[int] = None
+    score_breakdown: Optional[Dict[str, Any]] = None
+    confidence_breakdown: Optional[Dict[str, Any]] = None
+    key_factors: Optional[List[str]] = None
+    data_gaps: Optional[List[str]] = None
+    fundamental_data: Optional[Dict[str, Any]] = None
 
 
 class CompanyRanking(BaseModel):
