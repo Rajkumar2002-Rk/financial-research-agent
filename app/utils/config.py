@@ -4,6 +4,7 @@ from functools import lru_cache
 class Settings(BaseSettings):
     OPENAI_API_KEY: str
     TAVILY_API_KEY: str
+    ALPHA_VANTAGE_API_KEY: str = ""   # free key from alphavantage.co
     REDIS_URL: str = "redis://localhost:6379"
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
