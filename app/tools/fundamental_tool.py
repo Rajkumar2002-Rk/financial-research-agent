@@ -30,6 +30,25 @@ def _safe_float(val) -> float | None:
         return None
 
 
+def _to_percent(val, cap: float = 999.0) -> float | None:
+    """
+    Convert an Alpha Vantage ratio field to a display percentage.
+
+    Alpha Vantage inconsistently returns some fields as true decimals
+    (0.15 means 15%) and others already as percentages (15.0 means 15%).
+    Detect the format by magnitude:
+      abs(val) <= 1  →  decimal form  → multiply by 100
+      abs(val)  > 1  →  already %     → use as-is
+
+    A final sanity cap rejects obviously corrupt values (e.g. 40 000%).
+    """
+    f = _safe_float(val)
+    if f is None:
+        return None
+    result = round(f * 100, 2) if abs(f) <= 1 else round(f, 2)
+    return result if abs(result) <= cap else None
+
+
 def fetch_fundamental_data(ticker: str) -> Dict[str, Any]:
     """
     Fetch fundamental data from Alpha Vantage OVERVIEW endpoint.
@@ -87,13 +106,11 @@ def fetch_fundamental_data(ticker: str) -> Dict[str, Any]:
         if result["eps"] is not None:
             result["eps"] = round(result["eps"], 2)
 
-        # Revenue growth is a decimal in AV (0.12 = 12%) — convert to %
-        rev_raw = _safe_float(data.get("QuarterlyRevenueGrowthYOY"))
-        result["revenue_growth"] = round(rev_raw * 100, 2) if rev_raw is not None else None
+        # Revenue growth — AV returns this as decimal OR already-% inconsistently
+        result["revenue_growth"] = _to_percent(data.get("QuarterlyRevenueGrowthYOY"))
 
-        # Profit margin is also a decimal
-        margin_raw = _safe_float(data.get("ProfitMargin"))
-        result["profit_margin"] = round(margin_raw * 100, 2) if margin_raw is not None else None
+        # Profit margin — same inconsistency; _to_percent handles both formats
+        result["profit_margin"] = _to_percent(data.get("ProfitMargin"))
 
         # Market cap (not in scoring but useful for display)
         mc_raw = _safe_float(data.get("MarketCapitalization"))
