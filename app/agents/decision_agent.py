@@ -48,7 +48,12 @@ Return only valid JSON. No markdown, no explanation."""
             content = content.split("```")[1]
             if content.startswith("json"):
                 content = content[4:]
-        return json.loads(content.strip())
+            content = content.rstrip("`").strip()
+        result = json.loads(content.strip())
+        # Guard: GPT sometimes wraps response in an array
+        if isinstance(result, list):
+            result = result[0] if result else {}
+        return result
     except Exception as e:
         logger.error("sentiment_classification_failed", ticker=ticker, error=str(e))
         return {"sentiment": "neutral", "summary": "News analysis unavailable.", "key_events": []}
@@ -125,7 +130,12 @@ Return only valid JSON."""
             content = content.split("```")[1]
             if content.startswith("json"):
                 content = content[4:]
-        return json.loads(content.strip())
+            content = content.rstrip("`").strip()
+        result = json.loads(content.strip())
+        # Guard: GPT sometimes wraps response in an array
+        if isinstance(result, list):
+            result = result[0] if result else {}
+        return result
     except Exception as e:
         logger.error("explanation_generation_failed", ticker=ticker, error=str(e))
         return {
