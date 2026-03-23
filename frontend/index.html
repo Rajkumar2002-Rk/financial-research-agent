@@ -33,6 +33,102 @@
 
 html,body{height:100%;overflow:hidden}
 
+/* ─── MOBILE TAB BAR ─── */
+.mob-tabs{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;z-index:200;
+  height:56px;
+  background:rgba(17,17,19,.96);
+  backdrop-filter:blur(30px);
+  -webkit-backdrop-filter:blur(30px);
+  border-top:1px solid var(--line);
+  flex-shrink:0;
+}
+.mob-tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:3px;
+  border:none;background:none;cursor:pointer;
+  color:var(--w3);font-family:inherit;font-size:10px;font-weight:600;
+  letter-spacing:.04em;text-transform:uppercase;
+  transition:color .2s;
+  padding:0;
+}
+.mob-tab.active{color:var(--blue)}
+.mob-tab svg{width:20px;height:20px}
+
+/* ─── RESPONSIVE BREAKPOINTS ─── */
+@media (max-width:768px){
+
+  html,body{overflow:auto;height:auto}
+
+  body{flex-direction:column}
+
+  .hdr{padding:0 16px}
+  .hdr-stack{display:none}
+
+  .main{
+    flex-direction:column;
+    overflow:visible;
+    flex:none;
+    min-height:calc(100vh - 52px);
+  }
+
+  /* Both panels full-width, stacked; JS toggles visibility */
+  .left{
+    width:100%;flex:none;
+    padding:18px 16px 80px;  /* 80px bottom = clear of tab bar */
+    min-height:calc(100vh - 52px);
+    overflow-y:auto;
+  }
+  .right{
+    width:100%;flex:none;border-left:none;
+    border-top:1px solid var(--line);
+    height:calc(100vh - 52px - 56px); /* viewport - header - tabbar */
+    position:fixed;bottom:56px;left:0;right:0;z-index:100;
+    display:none;flex-direction:column;
+  }
+  .right.mob-active{display:flex}
+  .left.mob-hidden{display:none}
+
+  /* Show tab bar */
+  .mob-tabs{display:flex}
+
+  /* Search bar: stack horizon selector on its own line */
+  .search-wrap{flex-wrap:wrap}
+  .horizon-sel{width:100%;order:2;height:42px}
+  .ticker-field{height:44px;font-size:14px}
+  .btn-go{height:44px;padding:0 20px;font-size:13px}
+
+  /* Metric cards: 1 column on very small, 2 on medium mobile */
+  .cards3{grid-template-columns:1fr 1fr;gap:8px}
+  .cards3 .mcard:last-child{grid-column:1/-1} /* confidence spans full */
+
+  /* Fundamental grid: 2 columns */
+  .fund-grid{grid-template-columns:repeat(2,1fr)}
+
+  /* Score bar label: allow score to wrap */
+  .score-total-val{font-size:16px;word-break:break-all}
+
+  /* Indicator cards: 2 columns */
+  .ind4{grid-template-columns:repeat(2,1fr)!important}
+
+  /* Text sections: no 2-col split */
+  .text2{flex-direction:column!important;gap:10px}
+
+  /* Chart height */
+  canvas#chart{max-height:160px}
+
+  /* Quick tickers */
+  .quick{gap:6px}
+  .qc{padding:6px 12px;font-size:11px}
+}
+
+@media (max-width:400px){
+  .cards3{grid-template-columns:1fr}
+  .cards3 .mcard:last-child{grid-column:auto}
+  .fund-grid{grid-template-columns:1fr 1fr}
+}
+
 body{
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",sans-serif;
   background:var(--black);
@@ -853,8 +949,44 @@ function addMsg(c,cls,txt){
 function show(id,d='block'){document.getElementById(id).style.display=d}
 function hide(id){document.getElementById(id).style.display='none'}
 
+/* ── Mobile tab switching ── */
+function switchTab(tab){
+  const left=document.querySelector('.left');
+  const right=document.querySelector('.right');
+  const tA=document.getElementById('tabAnalysis');
+  const tC=document.getElementById('tabChat');
+  if(tab==='analysis'){
+    left.classList.remove('mob-hidden');
+    right.classList.remove('mob-active');
+    tA.classList.add('active');tC.classList.remove('active');
+  }else{
+    left.classList.add('mob-hidden');
+    right.classList.add('mob-active');
+    tC.classList.add('active');tA.classList.remove('active');
+    /* scroll chat to bottom when switching to it */
+    const box=document.getElementById('msgs');
+    setTimeout(()=>{box.scrollTop=99999;},50);
+  }
+}
+
 document.getElementById('tickerInput').addEventListener('keydown',e=>{if(e.key==='Enter')analyze()});
 document.getElementById('chatIn').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
 </script>
+
+<!-- Mobile tab bar (hidden on desktop via CSS) -->
+<div class="mob-tabs" id="mobTabs">
+  <button class="mob-tab active" id="tabAnalysis" onclick="switchTab('analysis')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+    </svg>
+    Analysis
+  </button>
+  <button class="mob-tab" id="tabChat" onclick="switchTab('chat')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+    Chat
+  </button>
+</div>
 </body>
 </html>
