@@ -56,78 +56,6 @@ html,body{height:100%;overflow:hidden}
 .mob-tab.active{color:var(--blue)}
 .mob-tab svg{width:20px;height:20px}
 
-/* ─── RESPONSIVE BREAKPOINTS ─── */
-@media (max-width:768px){
-
-  html,body{overflow:auto;height:auto}
-
-  body{flex-direction:column}
-
-  .hdr{padding:0 16px}
-  .hdr-stack{display:none}
-
-  .main{
-    flex-direction:column;
-    overflow:visible;
-    flex:none;
-    min-height:calc(100vh - 52px);
-  }
-
-  /* Both panels full-width, stacked; JS toggles visibility */
-  .left{
-    width:100%;flex:none;
-    padding:18px 16px 80px;  /* 80px bottom = clear of tab bar */
-    min-height:calc(100vh - 52px);
-    overflow-y:auto;
-  }
-  .right{
-    width:100%;flex:none;border-left:none;
-    border-top:1px solid var(--line);
-    height:calc(100vh - 52px - 56px); /* viewport - header - tabbar */
-    position:fixed;bottom:56px;left:0;right:0;z-index:100;
-    display:none;flex-direction:column;
-  }
-  .right.mob-active{display:flex}
-  .left.mob-hidden{display:none}
-
-  /* Show tab bar */
-  .mob-tabs{display:flex}
-
-  /* Search bar: stack horizon selector on its own line */
-  .search-wrap{flex-wrap:wrap}
-  .horizon-sel{width:100%;order:2;height:42px}
-  .ticker-field{height:44px;font-size:14px}
-  .btn-go{height:44px;padding:0 20px;font-size:13px}
-
-  /* Metric cards: 1 column on very small, 2 on medium mobile */
-  .cards3{grid-template-columns:1fr 1fr;gap:8px}
-  .cards3 .mcard:last-child{grid-column:1/-1} /* confidence spans full */
-
-  /* Fundamental grid: 2 columns */
-  .fund-grid{grid-template-columns:repeat(2,1fr)}
-
-  /* Score bar label: allow score to wrap */
-  .score-total-val{font-size:16px;word-break:break-all}
-
-  /* Indicator cards: 2 columns */
-  .ind4{grid-template-columns:repeat(2,1fr)!important}
-
-  /* Text sections: no 2-col split */
-  .text2{flex-direction:column!important;gap:10px}
-
-  /* Chart height */
-  canvas#chart{max-height:160px}
-
-  /* Quick tickers */
-  .quick{gap:6px}
-  .qc{padding:6px 12px;font-size:11px}
-}
-
-@media (max-width:400px){
-  .cards3{grid-template-columns:1fr}
-  .cards3 .mcard:last-child{grid-column:auto}
-  .fund-grid{grid-template-columns:1fr 1fr}
-}
 
 body{
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",sans-serif;
@@ -519,6 +447,79 @@ body{
   padding:3px 9px;border-radius:20px;
   background:rgba(255,214,10,.08);border:1px solid rgba(255,214,10,.2);
   font-size:10px;font-weight:500;color:var(--amber);margin:2px;
+}
+
+/* ─── RESPONSIVE BREAKPOINTS (must be last to override base styles) ─── */
+@media (max-width:768px){
+
+  html,body{overflow:auto;height:auto}
+
+  body{flex-direction:column}
+
+  .hdr{padding:0 16px}
+  .hdr-stack{display:none}
+
+  .main{
+    flex-direction:column;
+    overflow:visible;
+    flex:none;
+    min-height:calc(100vh - 52px);
+  }
+
+  /* Both panels full-width; JS toggles visibility via mob-hidden / mob-active */
+  .left{
+    width:100%;flex:none;
+    padding:18px 16px 80px; /* 80px bottom clears the tab bar */
+    min-height:calc(100vh - 52px);
+    overflow-y:auto;
+  }
+  .right{
+    width:100%;flex:none;border-left:none;
+    border-top:1px solid var(--line);
+    height:calc(100vh - 52px - 56px); /* viewport − header − tabbar */
+    position:fixed;bottom:56px;left:0;right:0;z-index:100;
+    display:none!important;flex-direction:column;
+  }
+  .right.mob-active{display:flex!important}
+  .left.mob-hidden{display:none!important}
+
+  /* Show the bottom tab bar */
+  .mob-tabs{display:flex}
+
+  /* Search bar wraps on mobile */
+  .search-wrap{flex-wrap:wrap}
+  .horizon-sel{width:100%;order:2;height:42px}
+  .ticker-field{height:44px;font-size:14px}
+  .btn-go{height:44px;padding:0 20px;font-size:13px}
+
+  /* Metric cards: 2 columns */
+  .cards3{grid-template-columns:1fr 1fr;gap:8px}
+  .cards3 .mcard:last-child{grid-column:1/-1}
+
+  /* Fundamentals: 2 columns */
+  .fund-grid{grid-template-columns:repeat(2,1fr)}
+
+  /* Score bar */
+  .score-total-val{font-size:16px;word-break:break-all}
+
+  /* Indicator cards */
+  .ind4{grid-template-columns:repeat(2,1fr)!important}
+
+  /* No 2-col text split */
+  .text2{flex-direction:column!important;gap:10px}
+
+  /* Chart */
+  canvas#chart{max-height:160px}
+
+  /* Quick tickers */
+  .quick{gap:6px}
+  .qc{padding:6px 12px;font-size:11px}
+}
+
+@media (max-width:400px){
+  .cards3{grid-template-columns:1fr}
+  .cards3 .mcard:last-child{grid-column:auto}
+  .fund-grid{grid-template-columns:1fr 1fr}
 }
 </style>
 </head>
