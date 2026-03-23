@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 import uuid
 import re
+from typing import List, Optional
 
 from app.models.requests import AnalysisRequest
 from app.models.responses import AnalysisResponse
@@ -75,6 +76,7 @@ async def analyze_company(request: AnalysisRequest):
             ticker=request.ticker,
             session_id=session_id,
             include_news=request.include_news,
+            time_horizon=getattr(request, "time_horizon", "default"),
             settings=settings,
         )
 
@@ -150,3 +152,54 @@ async def chat(request: dict):
     reply = response.choices[0].message.content.strip()
     await session.add_to_history(session_id, "assistant", reply)
     return {"reply": reply, "session_id": session_id}
+
+
+# ── Portfolio Ranking ─────────────────────────────────────────────────────────
+
+from pydantic import BaseModel, Field as PydanticField
+
+
+class PortfolioRankRequest(BaseModel):
+    tickers: List[str] = PydanticField(..., min_length=2, max_length=8)
+    time_horizon: str = PydanticField(
+        default="default",
+        description="'short_term', 'long_term', or 'default'",
+    )
+    session_id: Optional[str] = None
+
+
+@router.post("/portfolio/rank")
+async def portfolio_rank(request: PortfolioRankRequest):
+    """
+    Analyze multiple tickers, rank by normalized_score, and return
+    proportional allocation percentages for BUY/HOLD stocks.
+    """
+    from app.agents.portfolio_engine import rank_portfolio
+
+    # Deduplicate and uppercase
+    seen: set = set()
+    clean_tickers: List[str] = []
+    for t in request.tickers:
+        u = t.strip().upper()
+        if u not in seen:
+            seen.add(u)
+            clean_tickers.append(u)
+
+    if len(clean_tickers) < 2:
+        raise HTTPException(status_code=400, detail="At least 2 unique tickers required.")
+
+    valid_horizons = {"short_term", "long_term", "default"}
+    time_horizon = request.time_horizon if request.time_horizon in valid_horizons else "default"
+
+    try:
+        result = await rank_portfolio(
+            tickers=clean_tickers,
+            time_horizon=time_horizon,
+            session_id=request.session_id,
+        )
+        # Serialise AnalysisResponse objects
+        result["analyses"] = [a.model_dump(mode="json") for a in result["analyses"]]
+        return result
+    except Exception as e:
+        logger.error("portfolio_rank_failed", tickers=clean_tickers, error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))

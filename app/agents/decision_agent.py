@@ -90,21 +90,27 @@ def generate_explanation(
 
     missing = fundamentals_raw.get("missing_fields", [])
 
+    tech_max  = technical.get('max', 25)
+    fund_max  = fundamental.get('max', 40)
+    tech_missing  = technical.get('missing_components', [])
+    fund_missing  = fundamental.get('missing_components', [])
+
     prompt = f"""You are writing a brief explanation for a deterministic financial analysis result.
 The decision was computed by a rule-based scoring engine — you are NOT changing it.
 
 TICKER: {ticker}
 DECISION: {decision} (LOCKED — do not suggest a different decision)
-TOTAL SCORE: {total_score}/80
+TOTAL SCORE: {total_score} (max achievable with available data: {tech_max + fund_max + 15})
 CONFIDENCE: {confidence}%
+MISSING COMPONENTS: {tech_missing + fund_missing if (tech_missing or fund_missing) else 'None — full data available'}
 
 SCORE BREAKDOWN:
-- Technical: {technical.get('score', 0)}/25
+- Technical: {technical.get('score', 0)}/{tech_max} (missing: {tech_missing if tech_missing else 'none'})
   {json.dumps(technical.get('breakdown', {}), indent=2)}
-- Fundamental: {fundamental.get('score', 0)}/40
+- Fundamental: {fundamental.get('score', 0)}/{fund_max} (missing: {fund_missing if fund_missing else 'none'})
   {json.dumps(fundamental.get('breakdown', {}), indent=2)}
 - Sentiment: {sentiment.get('score', 0)}/15 ({sentiment.get('reason', '')})
-- Risk Penalty: {risk.get('penalty', 0)}/−20
+- Risk Penalty: {risk.get('penalty', 0)}/−10 (volatility-only)
   Reasons: {risk.get('reasons', [])}
 
 FUNDAMENTAL DATA: {', '.join(fund_lines) if fund_lines else 'Not available'}

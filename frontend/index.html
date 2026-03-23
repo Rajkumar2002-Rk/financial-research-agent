@@ -106,6 +106,19 @@ body{
   margin-bottom:24px;
 }
 
+.horizon-sel{
+  height:50px;padding:0 14px;
+  background:var(--c2);
+  border:1px solid var(--line);
+  border-radius:var(--r2);
+  color:var(--w2);font-size:12px;font-family:inherit;
+  outline:none;cursor:pointer;white-space:nowrap;flex-shrink:0;
+  appearance:none;-webkit-appearance:none;
+  transition:border-color .2s;
+}
+.horizon-sel:hover{border-color:var(--c4)}
+.horizon-sel option{background:var(--c2);color:var(--w1)}
+
 .ticker-field{
   flex:1;height:50px;
   padding:0 20px;
@@ -439,6 +452,11 @@ body{
     <div class="search-wrap">
       <input class="ticker-field" id="tickerInput"
              placeholder="Enter ticker symbol — AAPL, TSLA, NVDA, MSFT…"/>
+      <select class="horizon-sel" id="horizonSel" title="Investment time horizon">
+        <option value="default">⚖ Balanced</option>
+        <option value="short_term">⚡ Short-Term</option>
+        <option value="long_term">🏦 Long-Term</option>
+      </select>
       <button class="btn-go" id="analyzeBtn" onclick="analyze()">Analyze</button>
     </div>
 
@@ -483,6 +501,12 @@ body{
           <div class="mval" id="conf">—</div>
           <div class="msub" id="cache"></div>
         </div>
+      </div>
+
+      <!-- Conflict / Time Horizon Badges -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <span id="conflictBadge" style="display:none;align-items:center;gap:5px;padding:3px 11px;border-radius:20px;border:1px solid rgba(255,69,58,0.3);background:rgba(255,69,58,0.1);font-size:11px;font-weight:600;color:var(--red)">⚡ Signal Conflict Detected</span>
+        <span id="timeHorizonBadge" style="display:none;align-items:center;gap:5px;padding:3px 11px;border-radius:20px;border:1px solid rgba(10,132,255,0.2);background:rgba(10,132,255,0.08);font-size:11px;font-weight:600;color:var(--blue2)"></span>
       </div>
 
       <!-- Score Breakdown -->
@@ -612,7 +636,8 @@ async function analyze(){
   show('spinBox','flex');
   document.getElementById('analyzeBtn').disabled=true;
   try{
-    const r=await fetch('/api/v1/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticker:t,include_news:true})});
+    const horizon=document.getElementById('horizonSel')?.value||'default';
+    const r=await fetch('/api/v1/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticker:t,include_news:true,time_horizon:horizon})});
     const d=await r.json();
     if(!r.ok)throw new Error(d.detail||'Analysis failed');
     analysis=d; render(d);
@@ -652,35 +677,60 @@ function render(d){
   document.getElementById('conf').textContent=d.confidence_score?Math.round(d.confidence_score*100)+'%':'—';
   document.getElementById('cache').innerHTML=d.cached?'<span class="badge-cache">⚡ cached</span>':'';
 
-  // ── Score Breakdown ──
+  // ── Score Breakdown — uses normalized_score (0–100) for bar & colour ──
+  const ns=d.normalized_score;          // 0-100 normalised
   const ts=d.total_score;
-  const maxSc=d.max_score||80;
-  const buyThr=Math.round(60*(maxSc/80));   // 60 full data, 30 no fundamentals
-  const holdThr=Math.round(40*(maxSc/80));  // 40 full data, 20 no fundamentals
+  const maxSc=d.max_score||0;
   const tsEl=document.getElementById('totalScore');
-  if(ts!==null&&ts!==undefined){
-    tsEl.textContent=ts+' / '+maxSc;
-    tsEl.className='score-total-val '+(ts>=buyThr?'green':ts>=holdThr?'amber':'red');
-    const pct=Math.max(0,Math.min(100,Math.round((ts/maxSc)*100)));
+  if(ns!==null&&ns!==undefined){
+    tsEl.textContent=(ts!==null?ts:'?')+' / '+(maxSc||'?')+' → '+ns+'%';
+    const color=ns>=70?'green':ns>=40?'amber':'red';
+    tsEl.className='score-total-val '+color;
     const fill=document.getElementById('scoreBarFill');
-    fill.style.width=pct+'%';
-    fill.style.background=ts>=buyThr?'var(--green)':ts>=holdThr?'var(--amber)':'var(--red)';
+    fill.style.width=Math.max(0,Math.min(100,ns))+'%';
+    fill.style.background=ns>=70?'var(--green)':ns>=40?'var(--amber)':'var(--red)';
+  }else if(ts!==null&&ts!==undefined){
+    // Fallback: raw score if normalized not present
+    const maxF=maxSc||80;
+    const pct=Math.max(0,Math.min(100,Math.round((ts/maxF)*100)));
+    tsEl.textContent=ts+' / '+maxF;
+    tsEl.className='score-total-val '+(pct>=70?'green':pct>=40?'amber':'red');
+    document.getElementById('scoreBarFill').style.width=pct+'%';
   }else{tsEl.textContent='—';tsEl.className='score-total-val dim'}
 
+  // Conflict badge
+  const conflictBadge=document.getElementById('conflictBadge');
+  if(conflictBadge){
+    if(d.conflict_detected){conflictBadge.style.display='inline-flex'}
+    else{conflictBadge.style.display='none'}
+  }
+
+  // Time horizon badge
+  const thBadge=document.getElementById('timeHorizonBadge');
+  if(thBadge){
+    const labels={'short_term':'Short-Term','long_term':'Long-Term','default':'Balanced'};
+    thBadge.textContent='⏱ '+(labels[d.time_horizon_used]||d.time_horizon_used||'Balanced');
+    thBadge.style.display='inline-flex';
+  }
+
+  // Component bars — use dynamic maxes from score_breakdown if available
+  const sb=d.score_breakdown||{};
   function setBar(barId,valId,score,max,color){
-    const v=score!==null&&score!==undefined;
-    document.getElementById(valId).textContent=v?score+' / '+max:'—';
+    const v=score!==null&&score!==undefined&&max>0;
+    document.getElementById(valId).textContent=v?(score>0?'+':'')+score+' / '+max:'N/A';
     const pct=v?Math.max(0,Math.min(100,Math.round((Math.abs(score)/max)*100))):0;
     const el=document.getElementById(barId);
-    el.style.width=pct+'%';
-    el.style.background=color;
+    el.style.width=pct+'%';el.style.background=color;
   }
-  setBar('techBar','techVal',d.technical_score,25,'var(--blue)');
-  setBar('fundBar','fundVal',d.fundamental_score,40,'var(--purple)');
+  const techMax=(sb.technical&&sb.technical.max!=null)?sb.technical.max:25;
+  const fundMax=(sb.fundamental&&sb.fundamental.max!=null)?sb.fundamental.max:40;
+  setBar('techBar','techVal',d.technical_score,techMax||1,'var(--blue)');
+  setBar('fundBar','fundVal',d.fundamental_score,fundMax||1,'var(--purple)');
   setBar('sentBar','sentVal',d.sentiment_score,15,'var(--amber)');
   const rp=d.risk_penalty;
+  const riskMax=10;  // volatility-only risk (max -10)
   document.getElementById('riskVal').textContent=(rp!==null&&rp!==undefined)?rp+' / 0':'—';
-  const riskPct=(rp!==null&&rp!==undefined)?Math.round((Math.abs(rp)/20)*100):0;
+  const riskPct=(rp!==null&&rp!==undefined)?Math.round((Math.abs(rp)/riskMax)*100):0;
   document.getElementById('riskBar').style.width=riskPct+'%';
   document.getElementById('riskBar').style.background='var(--red)';
 
@@ -696,9 +746,10 @@ function render(d){
   }
   fmtFund('pe',fd.pe_ratio,v=>v.toFixed(1)+'x');
   fmtFund('eps',fd.eps,v=>'$'+v.toFixed(2));
-  fmtFund('revGrowth',fd.revenue_growth,v=>(v*100).toFixed(1)+'%');
-  fmtFund('profitMargin',fd.profit_margin,v=>(v*100).toFixed(1)+'%');
-  fmtFund('deRatio',fd.debt_to_equity,v=>v.toFixed(2));
+  // revenue_growth and profit_margin already returned as % (e.g. 15.2 = 15.2%)
+  fmtFund('revGrowth',fd.revenue_growth,v=>v.toFixed(1)+'%');
+  fmtFund('profitMargin',fd.profit_margin,v=>v.toFixed(1)+'%');
+  fmtFund('deRatio',fd.debt_to_equity,v=>v.toFixed(1)+'%');
   fmtFund('fcf',fd.free_cash_flow,v=>{
     const b=v/1e9;
     return Math.abs(b)>=1?'$'+b.toFixed(1)+'B':'$'+(v/1e6).toFixed(0)+'M';

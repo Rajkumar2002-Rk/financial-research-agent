@@ -7,6 +7,10 @@ class AnalysisRequest(BaseModel):
     ticker: str = Field(..., min_length=1, max_length=10)
     session_id: Optional[str] = None
     include_news: bool = True
+    time_horizon: str = Field(
+        default="default",
+        description="Investment horizon: 'short_term' (1–4 weeks), 'long_term' (1–5 years), or 'default' (balanced)",
+    )
 
     @field_validator("ticker")
     @classmethod

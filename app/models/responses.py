@@ -47,7 +47,8 @@ class AnalysisResponse(BaseModel):
     cached: bool = False
     # Deterministic scoring fields
     total_score: Optional[int] = None
-    max_score: Optional[int] = 80          # 40 when fundamental data unavailable
+    max_score: Optional[int] = None           # dynamic: sum of available component maxes
+    normalized_score: Optional[float] = None  # 0–100 scale: total_score/max_score × 100
     technical_score: Optional[int] = None
     fundamental_score: Optional[int] = None
     sentiment_score: Optional[int] = None
@@ -56,7 +57,11 @@ class AnalysisResponse(BaseModel):
     confidence_breakdown: Optional[Dict[str, Any]] = None
     key_factors: Optional[List[str]] = None
     data_gaps: Optional[List[str]] = None
+    missing_components: Optional[List[str]] = None  # technical + fundamental gaps
     fundamental_data: Optional[Dict[str, Any]] = None
+    # Upgrade fields
+    conflict_detected: bool = False           # True when signals strongly disagree
+    time_horizon_used: str = "default"        # short_term | long_term | default
 
 
 class CompanyRanking(BaseModel):
