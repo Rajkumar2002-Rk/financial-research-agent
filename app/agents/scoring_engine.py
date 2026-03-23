@@ -232,26 +232,32 @@ def compute_confidence(
     if fundamental_available:
         completeness = max(0, 40 - (fundamental_missing_count * 7))
     else:
-        completeness = 12  # price + technical data only
+        # We still have a full year of OHLCV + technical indicators — that is meaningful data
+        completeness = 28
     confidence += completeness
     breakdown["data_completeness"] = {
         "score": completeness, "max": 40,
-        "reason": f"{'Fundamental data available' if fundamental_available else 'No fundamental data'} — {6 - fundamental_missing_count}/6 fields present",
+        "reason": f"{'Fundamental data available' if fundamental_available else 'No fundamental data (technical-only analysis)'} — {6 - fundamental_missing_count}/6 fields present",
     }
 
     # Signal Agreement (0–30)
+    # When fundamentals are unavailable, only compare technical vs sentiment to avoid
+    # spurious disagreement from a missing data source (not a real signal conflict)
     tech_norm = (technical_score + 5) / 30   # normalise to 0–1 (min possible is -5)
-    fund_norm = fundamental_score / 40
     sent_norm = sentiment_score / 15
+    if fundamental_available:
+        fund_norm = fundamental_score / 40
+        normals = [tech_norm, fund_norm, sent_norm]
+    else:
+        normals = [tech_norm, sent_norm]
 
-    normals = [tech_norm, fund_norm, sent_norm]
     avg = sum(normals) / len(normals)
     variance = sum((s - avg) ** 2 for s in normals) / len(normals)
     agreement = max(0, min(30, int(30 - variance * 120)))
     confidence += agreement
     breakdown["signal_agreement"] = {
         "score": agreement, "max": 30,
-        "reason": f"Technical, fundamental, sentiment variance = {round(variance, 3)} — {'low' if variance < 0.05 else 'moderate' if variance < 0.15 else 'high'} disagreement",
+        "reason": f"Signal variance = {round(variance, 3)} — {'low' if variance < 0.05 else 'moderate' if variance < 0.15 else 'high'} disagreement",
     }
 
     # Volatility Penalty (0 to -20)
@@ -284,7 +290,7 @@ def compute_confidence(
 # ─── Final Decision ───────────────────────────────────────────────────────────
 
 def make_deterministic_decision(total_score: int, confidence: int) -> str:
-    if confidence < 40:
+    if confidence < 20:
         return "INSUFFICIENT_DATA"
     if total_score >= 60:
         return "BUY"

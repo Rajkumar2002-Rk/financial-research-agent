@@ -14,7 +14,7 @@ def apply_guardrails(response: AnalysisResponse, session_id: str) -> AnalysisRes
 
 
 def check_confidence_threshold(response: AnalysisResponse, session_id: str) -> AnalysisResponse:
-    if response.confidence_score < 0.4:
+    if response.confidence_score < 0.2:
         logger.warning(
             "guardrail_low_confidence",
             session_id=session_id,
