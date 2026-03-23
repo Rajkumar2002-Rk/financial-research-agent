@@ -8,6 +8,7 @@ langchain-openai==0.1.8
 langgraph==0.1.1
 pandas==2.2.2
 pandas_datareader==0.10.0
+yfinance==0.2.54
 numpy==1.26.4
 tavily-python==0.3.3
 redis[asyncio]==5.0.4
