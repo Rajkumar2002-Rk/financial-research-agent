@@ -9,6 +9,11 @@ A production-grade AI-powered stock research platform built with FastAPI, LangGr
 ![AWS EC2](https://img.shields.io/badge/AWS-EC2-orange)
 ![Mobile Ready](https://img.shields.io/badge/Mobile-Responsive-brightgreen)
 
+## 🚀 Live Demo
+👉 **[fintel.rajkumarai.dev](https://fintel.rajkumarai.dev)** — deployed on AWS EC2
+
+> Portfolio: [rajkumarai.dev](https://rajkumarai.dev)
+
 ---
 
 ## What Makes This Different
