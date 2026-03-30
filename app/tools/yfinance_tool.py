@@ -11,7 +11,11 @@ def fetch_stock_data(ticker: str, period: str = "1y") -> Dict[str, Any]:
         end = datetime.now()
         start = end - timedelta(days=365)
 
-        df = pdr.data.DataReader(ticker, "stooq", start, end)
+        # Stooq requires a market suffix for US equities (e.g. AAPL.US).
+        # If the ticker has no dot already, append .US so the URL resolves correctly.
+        stooq_ticker = ticker if "." in ticker else f"{ticker}.US"
+
+        df = pdr.data.DataReader(stooq_ticker, "stooq", start, end)
 
         if df.empty:
             raise ValueError(f"No price data found for ticker '{ticker}'")
