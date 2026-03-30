@@ -1,5 +1,5 @@
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict, Any
 from app.utils.config import get_settings
 from app.utils.logger import get_logger
@@ -22,7 +22,7 @@ def fetch_stock_data(ticker: str, period: str = "1y") -> Dict[str, Any]:
             params={
                 "function": "TIME_SERIES_DAILY",
                 "symbol": ticker,
-                "outputsize": "full",      # up to 20 years; we slice to 1y below
+                "outputsize": "compact",   # free tier: last 100 trading days (~5 months)
                 "apikey": settings.ALPHA_VANTAGE_API_KEY,
             },
             timeout=20,
@@ -40,13 +40,9 @@ def fetch_stock_data(ticker: str, period: str = "1y") -> Dict[str, Any]:
         if not time_series:
             raise ValueError(f"No price data found for ticker '{ticker}'")
 
-        # Filter to last 365 days
-        cutoff = datetime.now() - timedelta(days=365)
+        # compact outputsize returns ~100 most recent trading days — use all of them
         history_records = []
         for date_str, values in sorted(time_series.items()):
-            date = datetime.strptime(date_str, "%Y-%m-%d")
-            if date < cutoff:
-                continue
             history_records.append({
                 "date": date_str,
                 "open":   round(float(values["1. open"]),  2),
