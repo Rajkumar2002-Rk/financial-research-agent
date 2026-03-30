@@ -7,7 +7,6 @@ langchain==0.2.1
 langchain-openai==0.1.8
 langgraph==0.1.1
 pandas==2.2.2
-yfinance==0.2.40
 numpy==1.26.4
 tavily-python==0.3.3
 redis[asyncio]==5.0.4
