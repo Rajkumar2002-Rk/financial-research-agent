@@ -1,5 +1,4 @@
-import pandas_datareader as pdr
-from datetime import datetime, timedelta
+import yfinance as yf
 from typing import Dict, Any
 from app.utils.logger import get_logger
 
@@ -8,20 +7,16 @@ logger = get_logger(__name__)
 
 def fetch_stock_data(ticker: str, period: str = "1y") -> Dict[str, Any]:
     try:
-        end = datetime.now()
-        start = end - timedelta(days=365)
-
-        # Stooq requires a market suffix for US equities (e.g. AAPL.US).
-        # If the ticker has no dot already, append .US so the URL resolves correctly.
-        stooq_ticker = ticker if "." in ticker else f"{ticker}.US"
-
-        df = pdr.data.DataReader(stooq_ticker, "stooq", start, end)
+        stock = yf.Ticker(ticker)
+        df = stock.history(period="1y")
 
         if df.empty:
             raise ValueError(f"No price data found for ticker '{ticker}'")
 
         df = df.sort_index()
         df = df.dropna()
+
+        info = stock.info or {}
 
         current_price = round(float(df["Close"].iloc[-1]), 2)
         week_52_high = round(float(df["High"].max()), 2)
@@ -40,11 +35,11 @@ def fetch_stock_data(ticker: str, period: str = "1y") -> Dict[str, Any]:
 
         return {
             "ticker": ticker,
-            "company_name": ticker,
+            "company_name": info.get("longName", ticker),
             "current_price": current_price,
-            "currency": "USD",
-            "sector": "N/A",
-            "market_cap": None,
+            "currency": info.get("currency", "USD"),
+            "sector": info.get("sector", "N/A"),
+            "market_cap": info.get("marketCap"),
             "52_week_high": week_52_high,
             "52_week_low": week_52_low,
             "price_history": history_records,
