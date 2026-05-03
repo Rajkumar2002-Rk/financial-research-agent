@@ -17,4 +17,4 @@ services:
       - redis
     environment:
       - REDIS_URL=redis://redis:6379
-    restart: unless-stopped 
+    restart: unless-stopped
