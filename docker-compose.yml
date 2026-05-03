@@ -8,7 +8,7 @@ services:
     restart: unless-stopped
 
   app:
-    build: .
+    image: raja1566/financial-research-agent:latest
     ports:
       - "8000:8000"
     env_file:
@@ -17,4 +17,4 @@ services:
       - redis
     environment:
       - REDIS_URL=redis://redis:6379
-    restart: unless-stopped
+    restart: unless-stopped 
