@@ -33,7 +33,7 @@ Most AI financial tools let the LLM decide whether to buy or sell. This system d
 - **Confidence scoring** — 5-factor model: data completeness, missing data penalty, signal agreement, signal consistency bonus, volatility/uncertainty penalty
 
 ### Analysis
-- **Live market data** — real OHLCV price history via Stooq (no API key required)
+- **Live market data** — real OHLCV price history via Alpha Vantage TIME_SERIES_DAILY (last 100 trading days)
 - **Technical indicators** — MA50, MA200, RSI, volatility, 1Y price change, golden cross / death cross detection
 - **Fundamental data** — revenue growth, profit margin, P/E ratio, debt-to-equity, EPS via Alpha Vantage
 - **News sentiment** — real-time news via Tavily API, scored by GPT-4o into positive / neutral / negative
@@ -42,11 +42,17 @@ Most AI financial tools let the LLM decide whether to buy or sell. This system d
 - **Multi-ticker ranking** — submit a list of tickers and receive a ranked table sorted by normalized score
 - **Allocation percentages** — portfolio allocation is distributed proportionally among BUY and HOLD positions; SELL and INSUFFICIENT_DATA positions receive 0%
 
+### AI Chat Assistant
+- **Full analysis context** — after running an analysis, the chat assistant receives the complete result: recommendation, normalized score, all component scores, fundamentals (P/E, EPS, revenue growth, profit margin, FCF), reasoning, news summary, risk assessment, key factors, and data gaps
+- **Pronoun resolution** — when you ask "why is it a buy?" or "compare it with MSFT", the backend automatically resolves "it" and "this stock" to the currently analyzed ticker using keyword detection
+- **Dynamic suggestion chips** — chips update after every analysis based on the result: "Why BUY/SELL/HOLD?", "Signal conflict?" (when technical and fundamental signals disagree), "Compare {TICKER}", "Key risks", and "Data gaps?" (when incomplete data was detected)
+- **Smart compare pre-fill** — clicking "Compare" sets the input to `"Compare {TICKER} with "` and focuses the cursor, prompting you to type the second ticker rather than auto-sending a hardcoded pair
+- **Company name display** — the chat panel header shows the full company name alongside the ticker symbol after analysis completes
+
 ### Infrastructure
 - **Redis caching** — analysis results cached for 15 minutes to minimize API calls
 - **Session memory** — chat history persisted per session in Redis
 - **Fully mobile responsive** — tab-based layout on mobile with Analysis and Chat panels switchable via bottom tab bar
-- **AI chat assistant** — ask follow-up questions about any analyzed stock in natural language
 
 ---
 
@@ -57,7 +63,7 @@ Most AI financial tools let the LLM decide whether to buy or sell. This system d
 | Backend | FastAPI + Uvicorn |
 | AI Orchestration | LangGraph + LangChain |
 | LLM | OpenAI GPT-4o |
-| Market Data | Stooq via pandas_datareader |
+| Market Data | Alpha Vantage TIME_SERIES_DAILY |
 | Fundamental Data | Alpha Vantage API |
 | News | Tavily Search API |
 | Caching & Sessions | Redis |
@@ -71,6 +77,10 @@ Most AI financial tools let the LLM decide whether to buy or sell. This system d
 
 ## Architecture
 
+### LangGraph StateGraph Pipeline
+
+The orchestrator is a compiled LangGraph `StateGraph` with 9 nodes. Market data is fetched first (sequential), then fundamental data and news are fetched in parallel (fan-out), before converging back for the scoring and decision nodes (fan-in).
+
 ```
 User Request
      │
@@ -78,25 +88,35 @@ User Request
 FastAPI REST API
      │
      ▼
-Orchestrator (LangGraph)
-     ├── fetch_stock_data()        → Stooq (OHLCV + technicals)
-     ├── fetch_fundamental_data()  → Alpha Vantage
-     ├── fetch_company_news()      → Tavily API + GPT-4o sentiment
-     ├── apply_time_horizon_weights()
-     ├── compute_normalized_score()
-     ├── detect_conflict()
-     ├── compute_confidence()
-     └── make_deterministic_decision()  ← no LLM involvement
-          │
-          ▼
-     Decision Agent (GPT-4o)       → natural language explanation only
-          │
-          ▼
-Redis Cache (TTL: 15 min)
+LangGraph StateGraph (orchestrator.py)
      │
-     ▼
-JSON Response → Frontend
+     ├─ dispatch               → validates input, sets initial state
+     │
+     ├─ fetch_market_data      → Alpha Vantage TIME_SERIES_DAILY (OHLCV)
+     │
+     ├─ [parallel fan-out] ───────────────────────────────────┐
+     │    fetch_fundamental_data → Alpha Vantage OVERVIEW       │
+     │    fetch_news             → Tavily + GPT-4o sentiment    │
+     └────────────────────────────────────────────────────────┘
+          │ [fan-in: both branches merge into compute_indicators]
+          ▼
+     compute_indicators        → MA50, MA200, RSI, volatility, trend
+          │
+     [conditional edge: abort to END if market data failed]
+          │
+     compute_scores            → deterministic multi-factor scoring
+          │
+     make_decision             → BUY / HOLD / SELL (no LLM)
+          │
+     generate_explanation      → GPT-4o writes plain English summary
+          │
+     apply_guardrails          → INSUFFICIENT_DATA override if needed
+          │
+          ▼
+Redis Cache (TTL: 15 min) → JSON Response → Frontend
 ```
+
+**State management**: `AgentState` is a `TypedDict` with `Annotated` reducers — `operator.add` for list fields (`errors`, `tool_calls_log`) and a last-writer-wins lambda for `current_step`, preventing conflicts when parallel branches update state simultaneously.
 
 ### Scoring Engine Detail
 
@@ -139,7 +159,7 @@ financial-research-agent/
 │   │   ├── session_service.py      # Chat history in Redis
 │   │   └── validation_service.py   # Data quality checks
 │   ├── tools/
-│   │   ├── yfinance_tool.py        # Market data fetcher (Stooq)
+│   │   ├── yfinance_tool.py        # Market data fetcher (Alpha Vantage)
 │   │   └── tavily_tool.py          # News fetcher
 │   ├── utils/
 │   │   ├── config.py               # Pydantic BaseSettings

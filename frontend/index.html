@@ -706,11 +706,11 @@ body{
       </div>
     </div>
 
-    <div class="chips">
-      <div class="chip" onclick="ask('Should I buy this stock?')">Should I buy?</div>
+    <div class="chips" id="chatChips">
       <div class="chip" onclick="ask('What is the price of TSLA?')">TSLA price</div>
-      <div class="chip" onclick="ask('Compare AAPL and MSFT')">Compare stocks</div>
-      <div class="chip" onclick="ask('What are the main risks?')">Key risks</div>
+      <div class="chip" onclick="ask('Should I buy AAPL?')">Buy AAPL?</div>
+      <div class="chip" onclick="prefillCompare()">Compare stocks</div>
+      <div class="chip" onclick="ask('What are the main risks of investing in tech stocks?')">Tech risks</div>
     </div>
 
     <div class="chat-foot">
@@ -750,7 +750,8 @@ async function analyze(){
 function render(d){
   const ind=d.technical_indicators||{};
   ticker=d.ticker; sid=d.session_id;
-  document.getElementById('chatSub').textContent='Analyzing '+d.ticker;
+  const displayName=d.company_name&&d.company_name!==d.ticker?d.company_name+' ('+d.ticker+')':d.ticker;
+  document.getElementById('chatSub').textContent=displayName;
   document.getElementById('emptyChat').style.display='none';
 
   // ── Price card ──
@@ -885,6 +886,7 @@ function render(d){
 
   document.getElementById('chartTitle').textContent=d.ticker+' · Price History';
   drawChart(d.price_history||[]);
+  updateChips(d);
   show('results','block');
 }
 
@@ -918,6 +920,27 @@ function drawChart(h){
 
 function ask(t){document.getElementById('chatIn').value=t;send()}
 
+function prefillCompare(){
+  const inp=document.getElementById('chatIn');
+  inp.value=ticker?'Compare '+ticker+' with ':'Compare ';
+  inp.focus();
+  inp.setSelectionRange(inp.value.length,inp.value.length);
+}
+
+function updateChips(d){
+  const rec=(d.recommendation||'').toUpperCase();
+  const container=document.getElementById('chatChips');
+  const chips=[];
+  if(rec==='BUY') chips.push(`<div class="chip" onclick="ask('Why is ${d.ticker} a BUY?')">Why BUY?</div>`);
+  else if(rec==='SELL') chips.push(`<div class="chip" onclick="ask('Why is ${d.ticker} a SELL?')">Why SELL?</div>`);
+  else if(rec==='HOLD') chips.push(`<div class="chip" onclick="ask('Why is ${d.ticker} a HOLD?')">Why HOLD?</div>`);
+  if(d.conflict_detected) chips.push(`<div class="chip" onclick="ask('Why do the signals for ${d.ticker} disagree?')">Signal conflict?</div>`);
+  chips.push(`<div class="chip" onclick="prefillCompare()">Compare ${d.ticker}</div>`);
+  chips.push(`<div class="chip" onclick="ask('What are the main risks for ${d.ticker}?')">Key risks</div>`);
+  if(d.data_gaps&&d.data_gaps.length) chips.push(`<div class="chip" onclick="ask('Why is some data missing for ${d.ticker}?')">Data gaps?</div>`);
+  container.innerHTML=chips.join('');
+}
+
 async function send(){
   const inp=document.getElementById('chatIn');
   const msg=inp.value.trim();if(!msg)return;
@@ -930,11 +953,33 @@ async function send(){
   box.appendChild(ty);box.scrollTop=99999;
   try{
     const ind=analysis?.technical_indicators||{};
+    const fd=analysis?.fundamental_data||{};
     const r=await fetch('/api/v1/chat',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ticker:ticker||'',message:msg,session_id:sid,
-        current_price:analysis?.current_price,recommendation:analysis?.recommendation,
-        confidence_score:analysis?.confidence_score,rsi:ind.rsi,
-        ma_50:ind.ma_50,ma_200:ind.ma_200,price_change_pct:ind.price_change_pct})});
+      body:JSON.stringify({
+        ticker:ticker||'',message:msg,session_id:sid,
+        company_name:analysis?.company_name,
+        current_price:analysis?.current_price,
+        recommendation:analysis?.recommendation,
+        confidence_score:analysis?.confidence_score,
+        normalized_score:analysis?.normalized_score,
+        total_score:analysis?.total_score,
+        max_score:analysis?.max_score,
+        time_horizon_used:analysis?.time_horizon_used,
+        conflict_detected:analysis?.conflict_detected,
+        reasoning:analysis?.reasoning,
+        news_summary:analysis?.news_summary,
+        risk_assessment:analysis?.risk_assessment,
+        key_factors:analysis?.key_factors,
+        data_gaps:analysis?.data_gaps,
+        technical_score:analysis?.technical_score,
+        fundamental_score:analysis?.fundamental_score,
+        sentiment_score:analysis?.sentiment_score,
+        risk_penalty:analysis?.risk_penalty,
+        rsi:ind.rsi,ma_50:ind.ma_50,ma_200:ind.ma_200,price_change_pct:ind.price_change_pct,
+        pe_ratio:fd.pe_ratio,eps:fd.eps,revenue_growth:fd.revenue_growth,
+        profit_margin:fd.profit_margin,debt_to_equity:fd.debt_to_equity,free_cash_flow:fd.free_cash_flow
+      })
+    });
     const data=await r.json();
     sid=data.session_id;ty.remove();addMsg(box,'msg-a',data.reply);
   }catch{ty.remove();const e=addMsg(box,'msg-a','Something went wrong. Please try again.');e.style.color='var(--red)'}

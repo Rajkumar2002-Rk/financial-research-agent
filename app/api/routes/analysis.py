@@ -102,6 +102,13 @@ async def chat(request: dict):
 
     tickers_to_fetch = extract_tickers(message)
 
+    # Pronoun resolution: inject context_ticker when user says "it", "this stock", "compare", etc.
+    msg_lower = message.lower()
+    pronoun_triggers = ["it", "this stock", "this company", "the stock", "the company", "compare"]
+    if context_ticker and any(ref in msg_lower for ref in pronoun_triggers):
+        if context_ticker not in tickers_to_fetch:
+            tickers_to_fetch.insert(0, context_ticker)
+
     live_data_lines = []
     for ticker in tickers_to_fetch:
         try:
@@ -123,15 +130,49 @@ async def chat(request: dict):
     ]
 
     if context_ticker:
-        ind = {}
-        system_parts.append(f"\nCURRENT SESSION — {context_ticker}:")
+        company = request.get("company_name") or context_ticker
+        conf = request.get("confidence_score")
+        conf_str = f"{round(conf * 100)}%" if conf else "N/A"
+        system_parts.append(f"\nCURRENT ANALYSIS — {context_ticker} ({company}):")
         system_parts.append(f"  Price: ${request.get('current_price', 'N/A')}")
         system_parts.append(f"  Recommendation: {request.get('recommendation', 'N/A')}")
-        system_parts.append(f"  Confidence: {request.get('confidence_score', 'N/A')}")
+        system_parts.append(f"  Confidence: {conf_str}")
+        system_parts.append(f"  Score: {request.get('total_score', 'N/A')} / {request.get('max_score', 'N/A')} ({request.get('normalized_score', 'N/A')}%)")
+        system_parts.append(f"  Time Horizon: {request.get('time_horizon_used', 'N/A')}")
+        conflict = request.get("conflict_detected")
+        system_parts.append(f"  Signal Conflict: {'Yes — technical and fundamental signals disagree' if conflict else 'No'}")
+        system_parts.append(f"  Technical Score: {request.get('technical_score', 'N/A')}")
+        system_parts.append(f"  Fundamental Score: {request.get('fundamental_score', 'N/A')}")
+        system_parts.append(f"  Sentiment Score: {request.get('sentiment_score', 'N/A')}")
+        system_parts.append(f"  Risk Penalty: {request.get('risk_penalty', 'N/A')}")
         system_parts.append(f"  RSI: {request.get('rsi', 'N/A')}")
         system_parts.append(f"  MA50: {request.get('ma_50', 'N/A')}")
         system_parts.append(f"  MA200: {request.get('ma_200', 'N/A')}")
-        system_parts.append(f"  1Y Change: {request.get('price_change_pct', 'N/A')}%")
+        system_parts.append(f"  1Y Price Change: {request.get('price_change_pct', 'N/A')}%")
+        if request.get("pe_ratio"):
+            system_parts.append(f"  P/E Ratio: {request.get('pe_ratio')}")
+        if request.get("eps"):
+            system_parts.append(f"  EPS: ${request.get('eps')}")
+        if request.get("revenue_growth"):
+            system_parts.append(f"  Revenue Growth: {request.get('revenue_growth')}%")
+        if request.get("profit_margin"):
+            system_parts.append(f"  Profit Margin: {request.get('profit_margin')}%")
+        if request.get("debt_to_equity"):
+            system_parts.append(f"  Debt/Equity: {request.get('debt_to_equity')}%")
+        if request.get("free_cash_flow"):
+            fcf = request.get("free_cash_flow")
+            fcf_str = f"${fcf/1e9:.1f}B" if abs(fcf) >= 1e9 else f"${fcf/1e6:.0f}M"
+            system_parts.append(f"  Free Cash Flow: {fcf_str}")
+        if request.get("reasoning"):
+            system_parts.append(f"  Reasoning: {request.get('reasoning')}")
+        if request.get("news_summary"):
+            system_parts.append(f"  News Summary: {request.get('news_summary')}")
+        if request.get("risk_assessment"):
+            system_parts.append(f"  Risk Assessment: {request.get('risk_assessment')}")
+        if request.get("key_factors"):
+            system_parts.append(f"  Key Factors: {', '.join(request.get('key_factors', []))}")
+        if request.get("data_gaps"):
+            system_parts.append(f"  Data Gaps: {', '.join(request.get('data_gaps', []))}")
 
     if live_data_lines:
         system_parts.append("\nLIVE MARKET DATA (fetched now):")
