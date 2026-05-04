@@ -404,13 +404,15 @@ def _build_pipeline():
     # Entry point
     graph.set_entry_point("dispatch")
 
-    # Fan-out: dispatch triggers all three data fetches in parallel
+    # Step 1 (sequential): fetch market data first — AV burst limit is 1 req/sec
     graph.add_edge("dispatch", "fetch_market_data")
-    graph.add_edge("dispatch", "fetch_fundamental_data")
-    graph.add_edge("dispatch", "fetch_news")
 
-    # Fan-in: compute_indicators waits for all three branches to complete
-    graph.add_edge("fetch_market_data",      "compute_indicators")
+    # Step 2 (parallel): after price data returns, fan out to fundamental + news
+    # fetch_fundamental_data hits AV again; fetch_news hits Tavily — no conflict
+    graph.add_edge("fetch_market_data",      "fetch_fundamental_data")
+    graph.add_edge("fetch_market_data",      "fetch_news")
+
+    # Fan-in: compute_indicators waits for both branches to complete
     graph.add_edge("fetch_fundamental_data", "compute_indicators")
     graph.add_edge("fetch_news",             "compute_indicators")
 

@@ -49,7 +49,7 @@ class AgentState(TypedDict):
     # ── Metadata (reducers accumulate across parallel branches) ───────────────
     errors: Annotated[List[str], operator.add]
     tool_calls_log: Annotated[List[Dict[str, Any]], operator.add]
-    current_step: str
+    current_step: Annotated[str, lambda _old, new: new]  # last writer wins across parallel branches
     retry_count: int
 
 
