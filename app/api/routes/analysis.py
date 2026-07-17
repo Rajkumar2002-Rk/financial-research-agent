@@ -104,8 +104,9 @@ async def chat(request: dict):
 
     # Pronoun resolution: inject context_ticker when user says "it", "this stock", "compare", etc.
     msg_lower = message.lower()
-    pronoun_triggers = ["it", "this stock", "this company", "the stock", "the company", "compare"]
-    if context_ticker and any(ref in msg_lower for ref in pronoun_triggers):
+    phrase_triggers = ["this stock", "this company", "the stock", "the company", "compare"]
+    standalone_it = bool(re.search(r'\bit\b', msg_lower))
+    if context_ticker and (standalone_it or any(ref in msg_lower for ref in phrase_triggers)):
         if context_ticker not in tickers_to_fetch:
             tickers_to_fetch.insert(0, context_ticker)
 

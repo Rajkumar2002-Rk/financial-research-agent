@@ -981,6 +981,7 @@ async function send(){
       })
     });
     const data=await r.json();
+    if(!r.ok)throw new Error(data.detail||'Chat request failed');
     sid=data.session_id;ty.remove();addMsg(box,'msg-a',data.reply);
   }catch{ty.remove();const e=addMsg(box,'msg-a','Something went wrong. Please try again.');e.style.color='var(--red)'}
   box.scrollTop=99999;
