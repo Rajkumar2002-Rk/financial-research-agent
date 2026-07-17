@@ -185,11 +185,17 @@ async def chat(request: dict):
     messages.append({"role": "user", "content": message})
 
     client = OpenAI(api_key=settings.OPENAI_API_KEY)
-    response = client.chat.completions.create(
-        model=settings.OPENAI_MODEL,
-        messages=messages,
-        temperature=0.3,
-    )
+    try:
+        response = client.chat.completions.create(
+            model=settings.OPENAI_MODEL,
+            messages=messages,
+            temperature=0.3,
+        )
+    except Exception as e:
+        logger.error("chat_openai_failed", error=str(e))
+        status = 429 if "429" in str(e) or "quota" in str(e).lower() or "rate" in str(e).lower() else 500
+        detail = "OpenAI quota exceeded — please check your billing at platform.openai.com." if status == 429 else f"AI service error: {e}"
+        raise HTTPException(status_code=status, detail=detail)
 
     reply = response.choices[0].message.content.strip()
     await session.add_to_history(session_id, "assistant", reply)
